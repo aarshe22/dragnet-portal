@@ -14,6 +14,10 @@ use DragNet\Core\Router;
 use DragNet\Core\Database;
 use DragNet\Core\Session;
 use DragNet\Core\TenantContext;
+use DragNet\Core\EnvLoader;
+
+// Load .env file if it exists
+EnvLoader::load(__DIR__);
 
 // Load configuration
 $config = require __DIR__ . '/config/config.php';
@@ -92,17 +96,41 @@ try {
         echo $response;
     }
     
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     error_log($e->getMessage() . "\n" . $e->getTraceAsString());
     
-    if ($config['app']['debug']) {
+    // Try to get config for debug setting, but handle if config fails
+    $debug = false;
+    try {
+        if (isset($config) && isset($config['app']['debug'])) {
+            $debug = $config['app']['debug'];
+        }
+    } catch (Exception $configError) {
+        // Config failed, use defaults
+    }
+    
+    if ($debug) {
+        header('Content-Type: application/json');
         echo json_encode([
             'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
             'trace' => $e->getTraceAsString()
         ]);
     } else {
-        echo json_encode(['error' => 'Internal server error']);
+        // Check if this is an HTML request or API request
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        if (strpos($accept, 'text/html') !== false) {
+            // HTML error page
+            echo '<!DOCTYPE html><html><head><title>Error</title></head><body>';
+            echo '<h1>Internal Server Error</h1>';
+            echo '<p>An error occurred. Please contact the administrator.</p>';
+            echo '</body></html>';
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Internal server error']);
+        }
     }
 }
 
