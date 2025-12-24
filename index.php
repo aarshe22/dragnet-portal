@@ -12,13 +12,23 @@ $GLOBALS['config'] = $config;
 
 // Get request path first (before loading includes that might need DB)
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$path = rtrim($path, '/');
 
 // Remove query string
 $path = strtok($path, '?');
 
+// Normalize empty path to root
+if ($path === '' || $path === '/') {
+    $path = '/';
+} else {
+    // Remove trailing slash but keep root slash
+    $path = rtrim($path, '/');
+    if ($path === '') {
+        $path = '/';
+    }
+}
+
 // Handle root index.php access
-if ($path === '/index.php' || $path === '' || $path === '/index.php') {
+if ($path === '/index.php') {
     $path = '/';
 }
 
@@ -36,13 +46,25 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
 // Initialize database (with error handling)
-try {
-    db_init($config['database']);
-} catch (Exception $e) {
-    if ($config['app']['debug']) {
-        die('Database connection error: ' . htmlspecialchars($e->getMessage()) . '<br>Please check your .env file and database configuration.');
-    } else {
-        die('Database connection error. Please contact administrator.');
+// Skip DB init for login pages and static files
+$skipDbInit = ($path === '/login' || $path === '/login.php' || strpos($path, '/public/') === 0);
+
+if (!$skipDbInit) {
+    try {
+        db_init($config['database']);
+    } catch (Exception $e) {
+        // If database fails, redirect to login instead of showing error
+        // This allows users to see the login page even if DB is down
+        if ($path === '/' || strpos($path, '/dashboard') === 0) {
+            header('Location: /login.php');
+            exit;
+        }
+        // For other pages, show error
+        if ($config['app']['debug']) {
+            die('Database connection error: ' . htmlspecialchars($e->getMessage()) . '<br>Please check your .env file and database configuration.');
+        } else {
+            die('Database connection error. Please contact administrator.');
+        }
     }
 }
 
@@ -106,6 +128,11 @@ if ($path === '/service-worker.js') {
 $pageFile = $pageMap[$path] ?? null;
 
 if ($pageFile && file_exists(__DIR__ . '/pages/' . $pageFile)) {
+    // Check if accessing root and not authenticated - redirect to login
+    if ($path === '/' && !is_authenticated()) {
+        header('Location: /login.php');
+        exit;
+    }
     require __DIR__ . '/pages/' . $pageFile;
 } else {
     // 404 - show debug info if in debug mode
