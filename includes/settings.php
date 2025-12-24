@@ -88,32 +88,36 @@ function save_settings(array $settings, ?int $tenantId = null): bool
             // Convert value to string
             $stringValue = is_array($value) ? json_encode($value) : (string)$value;
             
-            // Use NULL for tenant_id if not provided (global settings)
-            $params = [
-                'tenant_id' => $tenantId,
-                'key' => $key,
-                'value' => $stringValue
-            ];
+            // Check if record exists first
+            $existing = db_fetch_one(
+                "SELECT id FROM settings WHERE tenant_id " . ($tenantId ? "= :tenant_id" : "IS NULL") . " AND setting_key = :key",
+                [
+                    'tenant_id' => $tenantId,
+                    'key' => $key
+                ]
+            );
             
-            // Try insert first, then update if duplicate
-            try {
+            if ($existing) {
+                // Update existing record
+                db_execute(
+                    "UPDATE settings SET setting_value = :value, updated_at = NOW() 
+                     WHERE id = :id",
+                    [
+                        'id' => $existing['id'],
+                        'value' => $stringValue
+                    ]
+                );
+            } else {
+                // Insert new record
                 db_execute(
                     "INSERT INTO settings (tenant_id, setting_key, setting_value) 
                      VALUES (:tenant_id, :key, :value)",
-                    $params
+                    [
+                        'tenant_id' => $tenantId,
+                        'key' => $key,
+                        'value' => $stringValue
+                    ]
                 );
-            } catch (PDOException $e) {
-                // If duplicate key error, update instead
-                if (strpos($e->getMessage(), 'Duplicate entry') !== false || 
-                    strpos($e->getMessage(), '23000') !== false) {
-                    db_execute(
-                        "UPDATE settings SET setting_value = :value, updated_at = NOW() 
-                         WHERE tenant_id " . ($tenantId ? "= :tenant_id" : "IS NULL") . " AND setting_key = :key",
-                        $params
-                    );
-                } else {
-                    throw $e;
-                }
             }
         }
         
