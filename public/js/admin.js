@@ -1,12 +1,31 @@
 /**
  * Admin Panel JavaScript
+ * 
+ * NOTE: This file is deprecated. All admin JavaScript has been moved inline to pages/admin.php
+ * to ensure proper jQuery/Leaflet loading order. This file is kept for backwards compatibility
+ * but should not be loaded.
  */
 
-let autoRefreshEnabled = true;
-let autoRefreshInterval = null;
-let currentLogSearch = '';
-
-$(document).ready(function() {
+// Wait for jQuery to be loaded
+(function() {
+    // Check if jQuery is loaded
+    function waitForJQuery(callback) {
+        if (typeof jQuery !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function() { waitForJQuery(callback); }, 50);
+        }
+    }
+    
+    waitForJQuery(function() {
+        // Now jQuery is available, use $ safely
+        const $ = jQuery;
+        
+        let autoRefreshEnabled = true;
+        let autoRefreshInterval = null;
+        let currentLogSearch = '';
+        
+        $(document).ready(function() {
     loadTenants();
     loadUsers();
     loadDevices();
@@ -504,14 +523,16 @@ function formatDateTime(date) {
     return new Date(date).toLocaleString();
 }
 
-function getStatusBadge(status) {
-    const badges = {
-        'online': '<span class="badge bg-success">Online</span>',
-        'offline': '<span class="badge bg-danger">Offline</span>',
-        'moving': '<span class="badge bg-primary">Moving</span>',
-        'idle': '<span class="badge bg-warning">Idle</span>',
-        'parked': '<span class="badge bg-secondary">Parked</span>'
-    };
-    return badges[status] || '<span class="badge bg-secondary">' + escapeHtml(status) + '</span>';
-}
+        window.getStatusBadge = function(status) {
+            const badges = {
+                'online': '<span class="badge bg-success">Online</span>',
+                'offline': '<span class="badge bg-danger">Offline</span>',
+                'moving': '<span class="badge bg-primary">Moving</span>',
+                'idle': '<span class="badge bg-warning">Idle</span>',
+                'parked': '<span class="badge bg-secondary">Parked</span>'
+            };
+            return badges[status] || '<span class="badge bg-secondary">' + escapeHtml(status) + '</span>';
+        };
+    });
+})();
 
