@@ -105,6 +105,18 @@ function format_datetime(?string $datetime, string $format = 'Y-m-d H:i:s'): str
 function get_current_page(): string
 {
     $script = $_SERVER['SCRIPT_NAME'] ?? '';
-    return basename($script, '.php');
+    $page = basename($script, '.php');
+    
+    // Handle index.php routing
+    if ($page === 'index') {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $path = rtrim($path, '/');
+        if ($path === '' || $path === '/') {
+            return 'dashboard';
+        }
+        $page = basename($path, '.php');
+    }
+    
+    return $page;
 }
 

@@ -10,6 +10,10 @@
 $config = require __DIR__ . '/config.php';
 $GLOBALS['config'] = $config;
 
+// Setup error handling
+require_once __DIR__ . '/includes/error_handler.php';
+setup_error_handler($config);
+
 // Get request path first (before loading includes that might need DB)
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
@@ -100,6 +104,10 @@ $pageMap = [
     '/admin.php' => 'admin.php',
     '/admin/users' => 'admin_users.php',
     '/admin/users.php' => 'admin_users.php',
+    '/profile' => 'profile.php',
+    '/profile.php' => 'profile.php',
+    '/settings' => 'settings.php',
+    '/settings.php' => 'settings.php',
 ];
 
 // Check if it's an API endpoint
