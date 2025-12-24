@@ -10,6 +10,24 @@
 $config = require __DIR__ . '/config.php';
 $GLOBALS['config'] = $config;
 
+// Get request path first (before loading includes that might need DB)
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$path = rtrim($path, '/');
+
+// Remove query string
+$path = strtok($path, '?');
+
+// Handle root index.php access
+if ($path === '/index.php' || $path === '' || $path === '/index.php') {
+    $path = '/';
+}
+
+// Check if it's a static asset (before loading includes)
+if (strpos($path, '/public/') === 0) {
+    // Let web server handle static files
+    return false;
+}
+
 // Load core includes
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/session.php';
@@ -17,18 +35,19 @@ require_once __DIR__ . '/includes/tenant.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-// Initialize database
-db_init($config['database']);
+// Initialize database (with error handling)
+try {
+    db_init($config['database']);
+} catch (Exception $e) {
+    if ($config['app']['debug']) {
+        die('Database connection error: ' . htmlspecialchars($e->getMessage()) . '<br>Please check your .env file and database configuration.');
+    } else {
+        die('Database connection error. Please contact administrator.');
+    }
+}
 
 // Initialize session
 session_start_custom($config['session']);
-
-// Get request path
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$path = rtrim($path, '/');
-
-// Remove query string
-$path = strtok($path, '?');
 
 // Route to page files
 $pageMap = [
@@ -83,19 +102,29 @@ if ($path === '/service-worker.js') {
     exit;
 }
 
-// Check if it's a static asset
-if (strpos($path, '/public/') === 0) {
-    // Let web server handle static files
-    return false;
-}
-
 // Route to page
 $pageFile = $pageMap[$path] ?? null;
 
 if ($pageFile && file_exists(__DIR__ . '/pages/' . $pageFile)) {
     require __DIR__ . '/pages/' . $pageFile;
 } else {
-    // 404
+    // 404 - show debug info if in debug mode
     http_response_code(404);
-    echo '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>Page Not Found</h1></body></html>';
+    if ($config['app']['debug']) {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? 'not set';
+        echo '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body>';
+        echo '<h1>Page Not Found</h1>';
+        echo '<p><strong>Path:</strong> ' . htmlspecialchars($path) . '</p>';
+        echo '<p><strong>REQUEST_URI:</strong> ' . htmlspecialchars($requestUri) . '</p>';
+        echo '<p><strong>Available routes:</strong> ' . htmlspecialchars(implode(', ', array_keys($pageMap))) . '</p>';
+        echo '<p><strong>Page file:</strong> ' . htmlspecialchars($pageFile ?? 'null') . '</p>';
+        if ($pageFile) {
+            $fullPath = __DIR__ . '/pages/' . $pageFile;
+            echo '<p><strong>File exists:</strong> ' . (file_exists($fullPath) ? 'Yes' : 'No') . '</p>';
+            echo '<p><strong>Full path:</strong> ' . htmlspecialchars($fullPath) . '</p>';
+        }
+        echo '</body></html>';
+    } else {
+        echo '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>Page Not Found</h1></body></html>';
+    }
 }

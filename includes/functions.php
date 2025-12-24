@@ -7,7 +7,7 @@
 /**
  * Get request input (GET, POST, or JSON body)
  */
-function input(string $key = null, $default = null)
+function input(?string $key = null, $default = null)
 {
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $merged = array_merge($_GET, $_POST, $input);
