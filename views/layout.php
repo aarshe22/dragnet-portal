@@ -31,9 +31,11 @@
     $context = get_tenant_context();
     $isAuthenticated = is_authenticated();
     $isAdmin = $isAuthenticated && has_role('Administrator');
+    // Show nav by default if authenticated, unless explicitly set to false
+    $shouldShowNav = !isset($showNav) ? $isAuthenticated : ($showNav !== false && $isAuthenticated);
     ?>
     
-    <?php if (isset($showNav) && $showNav !== false && $isAuthenticated): ?>
+    <?php if ($shouldShowNav): ?>
     <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid">
@@ -157,7 +159,7 @@
     </main>
     
     <!-- Footer -->
-    <?php if (isset($showNav) && $showNav !== false && $isAuthenticated): ?>
+    <?php if ($shouldShowNav): ?>
     <footer class="bg-light mt-5 py-3">
         <div class="container-fluid">
             <div class="row">

@@ -20,6 +20,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Asset Detail - DragNet Portal';
+$showNav = true;
 $tenantId = require_tenant();
 
 $assetId = (int)($_GET['id'] ?? 0);

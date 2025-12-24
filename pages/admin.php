@@ -19,6 +19,7 @@ require_auth();
 require_role('Administrator');
 
 $title = 'Administration - DragNet Portal';
+$showNav = true;
 
 ob_start();
 ?>

@@ -17,6 +17,7 @@ session_start_custom($config['session']);
 require_auth();
 
 $title = 'Settings - DragNet Portal';
+$showNav = true;
 
 ob_start();
 ?>

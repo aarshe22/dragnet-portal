@@ -19,6 +19,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Devices - DragNet Portal';
+$showNav = true;
 $tenantId = require_tenant();
 
 $devices = device_list_all($tenantId);

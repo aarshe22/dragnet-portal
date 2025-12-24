@@ -21,6 +21,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Dashboard - DragNet Portal';
+$showNav = true; // Show navigation
 $tenantId = require_tenant();
 
 // Get dashboard data

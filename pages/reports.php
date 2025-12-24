@@ -20,6 +20,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Reports - DragNet Portal';
+$showNav = true;
 $tenantId = require_tenant();
 
 // Get date range (default to last 30 days)

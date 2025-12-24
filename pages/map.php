@@ -19,6 +19,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Live Map - DragNet Portal';
+$showNav = true;
 
 ob_start();
 ?>

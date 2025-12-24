@@ -18,6 +18,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Geofences - DragNet Portal';
+$showNav = true;
 $tenantId = require_tenant();
 
 $geofences = db_fetch_all(

@@ -19,6 +19,7 @@ require_auth();
 require_role('ReadOnly');
 
 $title = 'Alerts - DragNet Portal';
+$showNav = true;
 $tenantId = require_tenant();
 
 $filter = input('filter', 'all');

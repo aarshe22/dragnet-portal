@@ -18,6 +18,7 @@ require_auth();
 require_role('Administrator');
 
 $title = 'User Management - DragNet Portal';
+$showNav = true;
 $tenantId = require_tenant();
 
 $users = db_fetch_all(

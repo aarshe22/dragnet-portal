@@ -17,6 +17,7 @@ session_start_custom($config['session']);
 require_auth();
 
 $title = 'Profile - DragNet Portal';
+$showNav = true;
 $context = get_tenant_context();
 
 $user = db_fetch_one(
