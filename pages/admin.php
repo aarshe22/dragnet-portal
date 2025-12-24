@@ -479,34 +479,92 @@ function updateMapPreview() {
 }
 
 function loadMapSettings() {
-    $.get('/api/admin/settings.php', function(settings) {
-        $('#mapProviderSelect').val(settings.map_provider || 'openstreetmap');
-        $('#mapZoom').val(settings.map_zoom || 10);
-        $('#mapCenterLat').val(settings.map_center_lat || 40.7128);
-        $('#mapCenterLon').val(settings.map_center_lon || -74.0060);
-        updateMapPreview();
+    $.ajax({
+        url: '/api/admin/settings.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(settings) {
+            $('#mapProviderSelect').val(settings.map_provider || 'openstreetmap');
+            $('#mapZoom').val(settings.map_zoom || 10);
+            $('#mapCenterLat').val(settings.map_center_lat || 40.7128);
+            $('#mapCenterLon').val(settings.map_center_lon || -74.0060);
+            if (mapPreview) {
+                updateMapPreview();
+            }
+        },
+        error: function(xhr) {
+            console.error('Failed to load map settings:', xhr);
+            // Use defaults
+            $('#mapProviderSelect').val('openstreetmap');
+            $('#mapZoom').val(10);
+            $('#mapCenterLat').val(40.7128);
+            $('#mapCenterLon').val(-74.0060);
+        }
     });
 }
 
 function saveMapSettings() {
+    // Validate inputs
+    const provider = $('#mapProviderSelect').val();
+    const zoom = parseInt($('#mapZoom').val());
+    const lat = parseFloat($('#mapCenterLat').val());
+    const lon = parseFloat($('#mapCenterLon').val());
+    
+    if (!provider) {
+        alert('Please select a map provider');
+        return;
+    }
+    
+    if (isNaN(zoom) || zoom < 1 || zoom > 20) {
+        alert('Zoom level must be between 1 and 20');
+        return;
+    }
+    
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+        alert('Latitude must be between -90 and 90');
+        return;
+    }
+    
+    if (isNaN(lon) || lon < -180 || lon > 180) {
+        alert('Longitude must be between -180 and 180');
+        return;
+    }
+    
     const settings = {
-        map_provider: $('#mapProviderSelect').val(),
-        map_zoom: parseInt($('#mapZoom').val()),
-        map_center_lat: parseFloat($('#mapCenterLat').val()),
-        map_center_lon: parseFloat($('#mapCenterLon').val())
+        map_provider: provider,
+        map_zoom: zoom,
+        map_center_lat: lat,
+        map_center_lon: lon
     };
+    
+    // Show loading state
+    const btn = $('button:contains("Save Map Settings")');
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Saving...');
     
     $.ajax({
         url: '/api/admin/settings.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(settings),
+        dataType: 'json',
+        timeout: 10000,
         success: function(response) {
-            alert('Map settings saved successfully!');
-            updateMapPreview();
+            btn.prop('disabled', false).html(originalText);
+            if (response.success || response.message) {
+                alert('Map settings saved successfully!');
+                updateMapPreview();
+            } else {
+                alert('Settings saved but no confirmation received');
+            }
         },
-        error: function(xhr) {
+        error: function(xhr, status, error) {
+            btn.prop('disabled', false).html(originalText);
+            
             let errorMsg = 'Unknown error';
+            let errorDetails = '';
+            
+            // Try to parse JSON error
             if (xhr.responseJSON && xhr.responseJSON.error) {
                 errorMsg = xhr.responseJSON.error;
             } else if (xhr.responseText) {
@@ -514,22 +572,35 @@ function saveMapSettings() {
                     const response = JSON.parse(xhr.responseText);
                     errorMsg = response.error || errorMsg;
                 } catch (e) {
-                    errorMsg = xhr.statusText || 'Failed to save settings';
-                    if (xhr.responseText) {
-                        errorMsg += '\n\nResponse: ' + xhr.responseText.substring(0, 200);
-                    }
+                    errorMsg = xhr.statusText || error || 'Request failed';
+                    errorDetails = '\n\nRaw response: ' + xhr.responseText.substring(0, 300);
                 }
+            } else {
+                errorMsg = status === 'timeout' ? 'Request timed out' : (error || 'Network error');
             }
             
-            let fullMessage = 'Error saving settings: ' + errorMsg;
+            // Add HTTP status if available
+            if (xhr.status) {
+                errorDetails += '\n\nHTTP Status: ' + xhr.status;
+            }
             
-            // Check if it's a table missing error
+            let fullMessage = 'Error saving settings:\n\n' + errorMsg + errorDetails;
+            
+            // Add helpful messages for common errors
             if (errorMsg.includes('does not exist') || errorMsg.includes('Table') || errorMsg.includes('Unknown table')) {
-                fullMessage += '\n\nTo fix this, run one of these commands:\n';
-                fullMessage += 'mysql -u root -p dragnet < database/migrations/add_settings_table.sql\n';
-                fullMessage += 'OR (if foreign key error):\n';
-                fullMessage += 'mysql -u root -p dragnet < database/migrations/add_settings_table_safe.sql';
+                fullMessage += '\n\nTo fix: Run the migration:\nmysql -u root -p dragnet < database/migrations/add_settings_table_safe.sql';
+            } else if (errorMsg.includes('Duplicate entry') || errorMsg.includes('23000')) {
+                fullMessage += '\n\nThis might be a duplicate key error. The settings may have been saved. Try refreshing the page.';
+            } else if (errorMsg.includes('Database error')) {
+                fullMessage += '\n\nCheck your database connection and ensure the settings table exists.';
             }
+            
+            console.error('Settings save error:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
             
             alert(fullMessage);
         }

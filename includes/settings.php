@@ -14,17 +14,15 @@ require_once __DIR__ . '/tenant.php';
 function settings_table_exists(): bool
 {
     try {
-        // Try to query the table
         db_fetch_one("SELECT 1 FROM settings LIMIT 1");
         return true;
     } catch (PDOException $e) {
-        // Check if it's a "table doesn't exist" error
-        if (strpos($e->getMessage(), "doesn't exist") !== false || 
-            strpos($e->getMessage(), "Unknown table") !== false ||
-            strpos($e->getMessage(), "Table") !== false && strpos($e->getMessage(), "doesn't exist") !== false) {
+        $msg = $e->getMessage();
+        if (stripos($msg, "doesn't exist") !== false || 
+            stripos($msg, "Unknown table") !== false ||
+            stripos($msg, "Table") !== false) {
             return false;
         }
-        // Other database errors - rethrow
         throw $e;
     } catch (Exception $e) {
         return false;
@@ -39,9 +37,9 @@ function get_settings(?int $tenantId = null): array
     // Default values
     $defaults = [
         'map_provider' => $_ENV['MAP_PROVIDER'] ?? 'openstreetmap',
-        'map_zoom' => $_ENV['MAP_ZOOM'] ?? 10,
-        'map_center_lat' => $_ENV['MAP_CENTER_LAT'] ?? 40.7128,
-        'map_center_lon' => $_ENV['MAP_CENTER_LON'] ?? -74.0060,
+        'map_zoom' => (int)($_ENV['MAP_ZOOM'] ?? 10),
+        'map_center_lat' => (float)($_ENV['MAP_CENTER_LAT'] ?? 40.7128),
+        'map_center_lon' => (float)($_ENV['MAP_CENTER_LON'] ?? -74.0060),
     ];
     
     // Try to get from database first
@@ -50,10 +48,18 @@ function get_settings(?int $tenantId = null): array
     }
     
     try {
-        $settings = db_fetch_all(
-            "SELECT setting_key, setting_value FROM settings WHERE tenant_id " . ($tenantId ? "= :tenant_id" : "IS NULL"),
-            $tenantId ? ['tenant_id' => $tenantId] : []
-        );
+        // Build query for NULL tenant_id (global settings)
+        if ($tenantId === null) {
+            $settings = db_fetch_all(
+                "SELECT setting_key, setting_value FROM settings WHERE tenant_id IS NULL",
+                []
+            );
+        } else {
+            $settings = db_fetch_all(
+                "SELECT setting_key, setting_value FROM settings WHERE tenant_id = :tenant_id",
+                ['tenant_id' => $tenantId]
+            );
+        }
         
         $result = [];
         foreach ($settings as $setting) {
@@ -63,10 +69,14 @@ function get_settings(?int $tenantId = null): array
             $result[$setting['setting_key']] = $decoded !== null ? $decoded : $value;
         }
         
-        // Merge with defaults
-        return array_merge($defaults, $result);
+        // Merge with defaults and convert types
+        $merged = array_merge($defaults, $result);
+        $merged['map_zoom'] = (int)($merged['map_zoom'] ?? 10);
+        $merged['map_center_lat'] = (float)($merged['map_center_lat'] ?? 40.7128);
+        $merged['map_center_lon'] = (float)($merged['map_center_lon'] ?? -74.0060);
+        
+        return $merged;
     } catch (Exception $e) {
-        // If settings table doesn't exist or query fails, return defaults
         error_log('Failed to get settings: ' . $e->getMessage());
         return $defaults;
     }
@@ -85,39 +95,45 @@ function save_settings(array $settings, ?int $tenantId = null): bool
         db_begin_transaction();
         
         foreach ($settings as $key => $value) {
-            // Convert value to string
-            $stringValue = is_array($value) ? json_encode($value) : (string)$value;
+            // Convert value to string (handle arrays/objects)
+            if (is_array($value) || is_object($value)) {
+                $stringValue = json_encode($value);
+            } else {
+                $stringValue = (string)$value;
+            }
             
-            // Check if record exists first
-            $existing = db_fetch_one(
-                "SELECT id FROM settings WHERE tenant_id " . ($tenantId ? "= :tenant_id" : "IS NULL") . " AND setting_key = :key",
-                [
-                    'tenant_id' => $tenantId,
-                    'key' => $key
-                ]
-            );
+            // Check if record exists - handle NULL tenant_id properly
+            if ($tenantId === null) {
+                $existing = db_fetch_one(
+                    "SELECT id FROM settings WHERE tenant_id IS NULL AND setting_key = :key",
+                    ['key' => $key]
+                );
+            } else {
+                $existing = db_fetch_one(
+                    "SELECT id FROM settings WHERE tenant_id = :tenant_id AND setting_key = :key",
+                    ['tenant_id' => $tenantId, 'key' => $key]
+                );
+            }
             
-            if ($existing) {
+            if ($existing && isset($existing['id'])) {
                 // Update existing record
                 db_execute(
-                    "UPDATE settings SET setting_value = :value, updated_at = NOW() 
-                     WHERE id = :id",
-                    [
-                        'id' => $existing['id'],
-                        'value' => $stringValue
-                    ]
+                    "UPDATE settings SET setting_value = :value, updated_at = NOW() WHERE id = :id",
+                    ['id' => $existing['id'], 'value' => $stringValue]
                 );
             } else {
                 // Insert new record
-                db_execute(
-                    "INSERT INTO settings (tenant_id, setting_key, setting_value) 
-                     VALUES (:tenant_id, :key, :value)",
-                    [
-                        'tenant_id' => $tenantId,
-                        'key' => $key,
-                        'value' => $stringValue
-                    ]
-                );
+                if ($tenantId === null) {
+                    db_execute(
+                        "INSERT INTO settings (tenant_id, setting_key, setting_value) VALUES (NULL, :key, :value)",
+                        ['key' => $key, 'value' => $stringValue]
+                    );
+                } else {
+                    db_execute(
+                        "INSERT INTO settings (tenant_id, setting_key, setting_value) VALUES (:tenant_id, :key, :value)",
+                        ['tenant_id' => $tenantId, 'key' => $key, 'value' => $stringValue]
+                    );
+                }
             }
         }
         
@@ -125,15 +141,18 @@ function save_settings(array $settings, ?int $tenantId = null): bool
         return true;
     } catch (PDOException $e) {
         db_rollback();
-        $errorMsg = 'Database error: ' . $e->getMessage();
-        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-            $errorMsg .= ' (Duplicate key - trying update instead)';
-        }
-        error_log('Failed to save settings: ' . $errorMsg);
-        throw new Exception($errorMsg);
+        $errorCode = $e->getCode();
+        $errorMsg = $e->getMessage();
+        
+        // Log detailed error
+        error_log('Settings save PDO error: Code=' . $errorCode . ', Message=' . $errorMsg);
+        error_log('SQL State: ' . ($e->errorInfo[0] ?? 'N/A'));
+        error_log('Driver Code: ' . ($e->errorInfo[1] ?? 'N/A'));
+        
+        throw new Exception('Database error: ' . $errorMsg . ' (Code: ' . $errorCode . ')');
     } catch (Exception $e) {
         db_rollback();
-        error_log('Failed to save settings: ' . $e->getMessage());
+        error_log('Settings save error: ' . $e->getMessage());
         throw $e;
     }
 }
