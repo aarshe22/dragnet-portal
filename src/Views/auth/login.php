@@ -34,9 +34,28 @@ ob_start();
                     <?php endif; ?>
                     
                     <?php if (!$entraEnabled && !$googleEnabled): ?>
-                    <div class="alert alert-warning">
-                        SSO is not configured. Please contact your administrator.
+                    <div class="alert alert-info">
+                        <strong>Development Mode</strong><br>
+                        SSO is not configured. Use the test login below for development/testing.
                     </div>
+                    
+                    <!-- Development/Testing Login Form -->
+                    <form method="POST" action="/auth/callback" id="devLoginForm">
+                        <div class="mb-3">
+                            <label for="dev_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="dev_email" name="email" 
+                                   value="admin@example.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dev_tenant_id" class="form-label">Tenant ID</label>
+                            <input type="number" class="form-control" id="dev_tenant_id" name="tenant_id" 
+                                   value="1" min="1" required>
+                        </div>
+                        <input type="hidden" name="provider" value="dev">
+                        <button type="submit" class="btn btn-secondary btn-lg w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>Test Login
+                        </button>
+                    </form>
                     <?php endif; ?>
                 </div>
             </div>

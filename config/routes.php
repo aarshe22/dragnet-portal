@@ -11,8 +11,10 @@ return [
     // Public/Auth routes
     'GET /' => 'DashboardController@index',
     'GET /login' => 'AuthController@login',
+    'POST /login' => 'AuthController@login',
     'GET /logout' => 'AuthController@logout',
     'GET /auth/callback' => 'AuthController@callback',
+    'POST /auth/callback' => 'AuthController@callback',
     'GET /auth/saml' => 'AuthController@saml',
     'GET /auth/oauth' => 'AuthController@oauth',
     

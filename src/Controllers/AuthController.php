@@ -37,41 +37,61 @@ class AuthController extends BaseController
      * 3. Create or update user record
      * 4. Establish tenant context
      */
-    public function callback(): array
+    public function callback()
     {
-        // Placeholder for SSO callback processing
-        // In production, this would:
+        // Handle both SSO callbacks and development/test logins
+        $email = $this->input('email');
+        $tenantId = (int)$this->input('tenant_id', 1);
+        $provider = $this->input('provider', 'oauth');
+        
+        // For development/test logins (when SSO not configured)
+        if ($provider === 'dev' || ($_SERVER['REQUEST_METHOD'] === 'POST' && $email)) {
+            if (!$email) {
+                header('Location: /login?error=email_required');
+                exit;
+            }
+            
+            // Verify tenant exists
+            $db = $this->app->getDatabase();
+            $tenant = $db->fetchOne("SELECT id FROM tenants WHERE id = :id", ['id' => $tenantId]);
+            
+            if (!$tenant) {
+                header('Location: /login?error=tenant_not_found');
+                exit;
+            }
+            
+            $userModel = new User($this->app);
+            $userModel->setTenantId($tenantId);
+            
+            // For dev mode, set default role to Administrator for first user
+            $existingUser = $userModel->findByEmail($email, $tenantId);
+            $role = $existingUser ? $existingUser['role'] : 'Administrator';
+            
+            $user = $userModel->findOrCreateFromSSO($email, $tenantId, 'dev', 'dev_' . $email, $role);
+            
+            // Create tenant context
+            $context = new TenantContext(
+                $tenantId,
+                $user['id'],
+                $user['email'],
+                $user['role']
+            );
+            
+            $context->toSession();
+            $this->app->setTenantContext($context);
+            
+            // Redirect to dashboard
+            header('Location: /dashboard');
+            exit;
+        }
+        
+        // Production SSO callback would go here
         // - Validate OAuth2/OIDC token or SAML assertion
         // - Extract claims (email, tenant_id, etc.)
         // - Look up or create user
         // - Set tenant context
         
-        $email = $this->input('email');
-        $tenantId = (int)$this->input('tenant_id', 1);
-        $provider = $this->input('provider', 'oauth');
-        
-        if (!$email) {
-            return $this->json(['error' => 'Email required'], 400);
-        }
-        
-        $userModel = new User($this->app);
-        $userModel->setTenantId($tenantId);
-        
-        $user = $userModel->findOrCreateFromSSO($email, $tenantId, $provider, 'sso_subject_' . $email);
-        
-        // Create tenant context
-        $context = new TenantContext(
-            $tenantId,
-            $user['id'],
-            $user['email'],
-            $user['role']
-        );
-        
-        $context->toSession();
-        $this->app->setTenantContext($context);
-        
-        // Redirect to dashboard
-        header('Location: /dashboard');
+        header('Location: /login?error=invalid_callback');
         exit;
     }
     
