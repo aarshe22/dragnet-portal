@@ -4,6 +4,10 @@
  * API: Get dashboard widgets data
  */
 
+// Load configuration first
+$config = require __DIR__ . '/../../config.php';
+$GLOBALS['config'] = $config;
+
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/tenant.php';
@@ -13,7 +17,6 @@ require_once __DIR__ . '/../../includes/devices.php';
 require_once __DIR__ . '/../../includes/assets.php';
 require_once __DIR__ . '/../../includes/alerts.php';
 
-$config = $GLOBALS['config'];
 db_init($config['database']);
 session_start_custom($config['session']);
 

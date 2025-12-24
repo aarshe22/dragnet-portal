@@ -4,6 +4,10 @@
  * API: User Management
  */
 
+// Load configuration first
+$config = require __DIR__ . '/../../config.php';
+$GLOBALS['config'] = $config;
+
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/tenant.php';
@@ -11,7 +15,6 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/admin.php';
 
-$config = $GLOBALS['config'];
 db_init($config['database']);
 session_start_custom($config['session']);
 

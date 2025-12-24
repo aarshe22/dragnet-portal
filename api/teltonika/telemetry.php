@@ -7,13 +7,16 @@
  * The actual Codec8/8E parsing should be done by a separate service/daemon.
  */
 
+// Load configuration first
+$config = require __DIR__ . '/../../config.php';
+$GLOBALS['config'] = $config;
+
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../includes/devices.php';
 require_once __DIR__ . '/../../includes/teltonika.php';
 
-$config = $GLOBALS['config'];
 db_init($config['database']);
 
 // Get device identifier (IMEI from header or query param)
