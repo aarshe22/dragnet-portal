@@ -1,0 +1,17 @@
+{
+    "name": "dragnet/portal",
+    "description": "DragNet Telematics Web Portal - Multi-tenant asset tracking",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-session": "*",
+        "ext-curl": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "DragNet\\Services\\": "src/Services/"
+        }
+    }
+}
