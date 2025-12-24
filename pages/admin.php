@@ -223,6 +223,205 @@ ob_start();
                                 </button>
                             </div>
                         </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="mb-4">
+                            <h6><i class="fas fa-envelope me-2"></i>Email Relay Provider Settings</h6>
+                            <p class="text-muted">Configure the email relay provider for sending notifications and alerts.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email Provider</label>
+                                    <select class="form-select" id="emailProviderSelect" onchange="updateEmailProviderFields()">
+                                        <optgroup label="SMTP Providers">
+                                            <option value="smtp">SMTP (Generic/Custom)</option>
+                                            <option value="smtp_com">SMTP.com</option>
+                                            <option value="smtp2go">SMTP2GO</option>
+                                            <option value="gmail">Gmail</option>
+                                            <option value="outlook">Outlook / Office 365</option>
+                                            <option value="yahoo">Yahoo Mail</option>
+                                            <option value="zoho">Zoho Mail</option>
+                                            <option value="protonmail">ProtonMail</option>
+                                            <option value="fastmail">FastMail</option>
+                                            <option value="mail_com">Mail.com</option>
+                                            <option value="aol">AOL Mail</option>
+                                        </optgroup>
+                                        <optgroup label="API Providers">
+                                            <option value="sendgrid">SendGrid</option>
+                                            <option value="mailgun">Mailgun</option>
+                                            <option value="ses">Amazon SES</option>
+                                            <option value="postmark">Postmark</option>
+                                            <option value="sparkpost">SparkPost</option>
+                                            <option value="mailjet">Mailjet</option>
+                                            <option value="mandrill">Mandrill (Mailchimp)</option>
+                                            <option value="sendinblue">Sendinblue (Brevo)</option>
+                                            <option value="pepipost">Pepipost</option>
+                                            <option value="postal">Postal</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">From Email Address</label>
+                                    <input type="email" class="form-control" id="emailFrom" placeholder="noreply@example.com">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="smtpFields">
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Host</label>
+                                    <input type="text" class="form-control" id="smtpHost" placeholder="smtp.example.com">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" id="smtpPort" placeholder="587" min="1" max="65535">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Encryption</label>
+                                    <select class="form-select" id="smtpEncryption">
+                                        <option value="tls">TLS</option>
+                                        <option value="ssl">SSL</option>
+                                        <option value="">None</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="smtpAuthFields">
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Username</label>
+                                    <input type="text" class="form-control" id="smtpUsername" placeholder="username">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Password</label>
+                                    <input type="password" class="form-control" id="smtpPassword" placeholder="••••••••">
+                                    <small class="text-muted">Leave blank to keep existing password</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="apiKeyFields" style="display: none;">
+                                <div class="col-md-12">
+                                    <label class="form-label">API Key</label>
+                                    <input type="password" class="form-control" id="emailApiKey" placeholder="API Key">
+                                    <small class="text-muted">Leave blank to keep existing API key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="sendgridFields" style="display: none;">
+                                <div class="col-md-12">
+                                    <label class="form-label">SendGrid API Key</label>
+                                    <input type="password" class="form-control" id="sendgridApiKey" placeholder="SG.xxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="mailgunFields" style="display: none;">
+                                <div class="col-md-6">
+                                    <label class="form-label">Mailgun Domain</label>
+                                    <input type="text" class="form-control" id="mailgunDomain" placeholder="mg.example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Mailgun API Key</label>
+                                    <input type="password" class="form-control" id="mailgunApiKey" placeholder="key-xxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="sesFields" style="display: none;">
+                                <div class="col-md-4">
+                                    <label class="form-label">AWS Region</label>
+                                    <input type="text" class="form-control" id="sesRegion" placeholder="us-east-1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">AWS Access Key ID</label>
+                                    <input type="text" class="form-control" id="sesAccessKey" placeholder="AKIAIOSFODNN7EXAMPLE">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">AWS Secret Access Key</label>
+                                    <input type="password" class="form-control" id="sesSecretKey" placeholder="••••••••">
+                                    <small class="text-muted">Leave blank to keep existing key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="postmarkFields" style="display: none;">
+                                <div class="col-md-6">
+                                    <label class="form-label">Postmark Server API Token</label>
+                                    <input type="password" class="form-control" id="postmarkToken" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing token</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Postmark Server ID</label>
+                                    <input type="text" class="form-control" id="postmarkServerId" placeholder="12345678">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="sparkpostFields" style="display: none;">
+                                <div class="col-md-12">
+                                    <label class="form-label">SparkPost API Key</label>
+                                    <input type="password" class="form-control" id="sparkpostApiKey" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="mailjetFields" style="display: none;">
+                                <div class="col-md-6">
+                                    <label class="form-label">Mailjet API Key</label>
+                                    <input type="text" class="form-control" id="mailjetApiKey" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Mailjet Secret Key</label>
+                                    <input type="password" class="form-control" id="mailjetSecretKey" placeholder="••••••••">
+                                    <small class="text-muted">Leave blank to keep existing key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="mandrillFields" style="display: none;">
+                                <div class="col-md-12">
+                                    <label class="form-label">Mandrill API Key</label>
+                                    <input type="password" class="form-control" id="mandrillApiKey" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key. Get your API key from <a href="https://mandrillapp.com/settings" target="_blank">Mandrill Dashboard</a></small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="sendinblueFields" style="display: none;">
+                                <div class="col-md-12">
+                                    <label class="form-label">Sendinblue (Brevo) API Key</label>
+                                    <input type="password" class="form-control" id="sendinblueApiKey" placeholder="xkeysib-xxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key. Get your API key from <a href="https://app.brevo.com/settings/keys/api" target="_blank">Brevo Dashboard</a></small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="pepipostFields" style="display: none;">
+                                <div class="col-md-12">
+                                    <label class="form-label">Pepipost API Key</label>
+                                    <input type="password" class="form-control" id="pepipostApiKey" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key. Get your API key from <a href="https://app.pepipost.com/index.php/settings/api" target="_blank">Pepipost Dashboard</a></small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3" id="postalFields" style="display: none;">
+                                <div class="col-md-6">
+                                    <label class="form-label">Postal Server URL</label>
+                                    <input type="text" class="form-control" id="postalServerUrl" placeholder="https://postal.example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Postal API Key</label>
+                                    <input type="password" class="form-control" id="postalApiKey" placeholder="xxxxxxxxxxxxxxxx">
+                                    <small class="text-muted">Leave blank to keep existing API key</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button class="btn btn-primary" onclick="saveEmailSettings()">
+                                    <i class="fas fa-save me-1"></i>Save Email Settings
+                                </button>
+                                <button class="btn btn-secondary" onclick="loadEmailSettings()">
+                                    <i class="fas fa-sync me-1"></i>Reset to Defaults
+                                </button>
+                                <button class="btn btn-info" onclick="testEmailSettings()">
+                                    <i class="fas fa-paper-plane me-1"></i>Send Test Email
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1137,6 +1336,375 @@ ob_start();
             };
             return badges[status] || '<span class="badge bg-secondary">' + escapeHtml(status) + '</span>';
         };
+        
+        window.updateEmailProviderFields = function() {
+            const provider = $('#emailProviderSelect').val();
+            
+            // Hide all provider-specific fields
+            $('#smtpFields, #smtpAuthFields, #apiKeyFields, #sendgridFields, #mailgunFields, #sesFields, #postmarkFields, #sparkpostFields, #mailjetFields, #mandrillFields, #sendinblueFields, #pepipostFields, #postalFields').hide();
+            
+            // Clear hints
+            $('#smtpHostHint, #smtpPortHint, #smtpEncryptionHint, #smtpUsernameHint, #smtpPasswordHint').text('');
+            
+            // Provider configurations
+            const providerConfigs = {
+                'smtp': { host: '', port: '587', encryption: 'tls', username: '', password: '', hostHint: '', portHint: '', encryptionHint: '', usernameHint: '', passwordHint: '' },
+                'smtp_com': { host: 'mail.smtp.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: mail.smtp.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your SMTP.com username', passwordHint: 'Your SMTP.com password or API key' },
+                'smtp2go': { host: 'mail.smtp2go.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: mail.smtp2go.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your SMTP2GO username', passwordHint: 'Your SMTP2GO password' },
+                'gmail': { host: 'smtp.gmail.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp.gmail.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your Gmail email address', passwordHint: 'Gmail App Password (not your regular password)' },
+                'outlook': { host: 'smtp-mail.outlook.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp-mail.outlook.com', portHint: 'Default: 587', encryptionHint: 'Use TLS', usernameHint: 'Your Outlook/Office 365 email address', passwordHint: 'Your Outlook/Office 365 password' },
+                'yahoo': { host: 'smtp.mail.yahoo.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp.mail.yahoo.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your Yahoo email address', passwordHint: 'Yahoo App Password (not your regular password)' },
+                'zoho': { host: 'smtp.zoho.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp.zoho.com (or smtp.zoho.eu for EU)', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your Zoho email address', passwordHint: 'Your Zoho password or App Password' },
+                'protonmail': { host: '127.0.0.1', port: '1025', encryption: '', username: '', password: '', hostHint: 'Requires ProtonMail Bridge (localhost:1025)', portHint: 'Default: 1025 (via Bridge)', encryptionHint: 'No encryption (handled by Bridge)', usernameHint: 'Not required (via Bridge)', passwordHint: 'Not required (via Bridge)' },
+                'fastmail': { host: 'smtp.fastmail.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp.fastmail.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your FastMail email address', passwordHint: 'FastMail App Password' },
+                'mail_com': { host: 'smtp.mail.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp.mail.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your Mail.com email address', passwordHint: 'Your Mail.com password' },
+                'aol': { host: 'smtp.aol.com', port: '587', encryption: 'tls', username: '', password: '', hostHint: 'Default: smtp.aol.com', portHint: 'Default: 587 (TLS) or 465 (SSL)', encryptionHint: 'Use TLS for port 587, SSL for port 465', usernameHint: 'Your AOL email address', passwordHint: 'AOL App Password (not your regular password)' }
+            };
+            
+            // Show relevant fields based on provider
+            if (['smtp', 'smtp_com', 'smtp2go', 'gmail', 'outlook', 'yahoo', 'zoho', 'protonmail', 'fastmail', 'mail_com', 'aol'].includes(provider)) {
+                $('#smtpFields, #smtpAuthFields').show();
+                
+                // Apply provider-specific defaults
+                if (providerConfigs[provider]) {
+                    const config = providerConfigs[provider];
+                    if (config.host) $('#smtpHost').val(config.host);
+                    if (config.port) $('#smtpPort').val(config.port);
+                    if (config.encryption) $('#smtpEncryption').val(config.encryption);
+                    if (config.hostHint) $('#smtpHostHint').text(config.hostHint);
+                    if (config.portHint) $('#smtpPortHint').text(config.portHint);
+                    if (config.encryptionHint) $('#smtpEncryptionHint').text(config.encryptionHint);
+                    if (config.usernameHint) $('#smtpUsernameHint').text(config.usernameHint);
+                    if (config.passwordHint) $('#smtpPasswordHint').text(config.passwordHint);
+                }
+            } else if (provider === 'sendgrid') {
+                $('#sendgridFields').show();
+            } else if (provider === 'mailgun') {
+                $('#mailgunFields').show();
+            } else if (provider === 'ses') {
+                $('#sesFields').show();
+            } else if (provider === 'postmark') {
+                $('#postmarkFields').show();
+            } else if (provider === 'sparkpost') {
+                $('#sparkpostFields').show();
+            } else if (provider === 'mailjet') {
+                $('#mailjetFields').show();
+            } else if (provider === 'mandrill') {
+                $('#mandrillFields').show();
+            } else if (provider === 'sendinblue') {
+                $('#sendinblueFields').show();
+            } else if (provider === 'pepipost') {
+                $('#pepipostFields').show();
+            } else if (provider === 'postal') {
+                $('#postalFields').show();
+            }
+        };
+        
+        window.loadEmailSettings = function() {
+            $.ajax({
+                url: '/api/admin/settings.php',
+                method: 'GET',
+                dataType: 'json',
+                success: function(settings) {
+                    $('#emailProviderSelect').val(settings.email_provider || 'smtp');
+                    $('#emailFrom').val(settings.email_from || '');
+                    $('#smtpHost').val(settings.smtp_host || '');
+                    $('#smtpPort').val(settings.smtp_port || '587');
+                    $('#smtpEncryption').val(settings.smtp_encryption || 'tls');
+                    $('#smtpUsername').val(settings.smtp_username || '');
+                    // Don't populate password fields for security
+                    $('#sendgridApiKey').val('');
+                    $('#mailgunDomain').val(settings.mailgun_domain || '');
+                    $('#mailgunApiKey').val('');
+                    $('#sesRegion').val(settings.ses_region || 'us-east-1');
+                    $('#sesAccessKey').val(settings.ses_access_key || '');
+                    $('#sesSecretKey').val('');
+                    $('#postmarkToken').val('');
+                    $('#postmarkServerId').val(settings.postmark_server_id || '');
+                    $('#sparkpostApiKey').val('');
+                    $('#mailjetApiKey').val(settings.mailjet_api_key || '');
+                    $('#mailjetSecretKey').val('');
+                    $('#mandrillApiKey').val('');
+                    
+                    updateEmailProviderFields();
+                },
+                error: function(xhr) {
+                    console.error('Failed to load email settings:', xhr);
+                    // Use defaults
+                    $('#emailProviderSelect').val('smtp');
+                    $('#emailFrom').val('');
+                    updateEmailProviderFields();
+                }
+            });
+        };
+        
+        window.saveEmailSettings = function() {
+            const provider = $('#emailProviderSelect').val();
+            const fromEmail = $('#emailFrom').val();
+            
+            if (!fromEmail) {
+                alert('Please enter a From email address');
+                return;
+            }
+            
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            const settings = {
+                email_provider: provider,
+                email_from: fromEmail
+            };
+            
+            // Add provider-specific settings
+            if (provider === 'smtp') {
+                const host = $('#smtpHost').val();
+                const port = parseInt($('#smtpPort').val());
+                const encryption = $('#smtpEncryption').val();
+                const username = $('#smtpUsername').val();
+                const password = $('#smtpPassword').val();
+                
+                if (!host) {
+                    alert('Please enter SMTP host');
+                    return;
+                }
+                
+                if (!port || port < 1 || port > 65535) {
+                    alert('Please enter a valid SMTP port (1-65535)');
+                    return;
+                }
+                
+                settings.smtp_host = host;
+                settings.smtp_port = port;
+                settings.smtp_encryption = encryption;
+                settings.smtp_username = username;
+                if (password) {
+                    settings.smtp_password = password;
+                }
+            } else if (provider === 'sendgrid') {
+                const apiKey = $('#sendgridApiKey').val();
+                if (apiKey) {
+                    settings.sendgrid_api_key = apiKey;
+                }
+            } else if (provider === 'mailgun') {
+                const domain = $('#mailgunDomain').val();
+                const apiKey = $('#mailgunApiKey').val();
+                
+                if (!domain) {
+                    alert('Please enter Mailgun domain');
+                    return;
+                }
+                
+                settings.mailgun_domain = domain;
+                if (apiKey) {
+                    settings.mailgun_api_key = apiKey;
+                }
+            } else if (provider === 'ses') {
+                const region = $('#sesRegion').val();
+                const accessKey = $('#sesAccessKey').val();
+                const secretKey = $('#sesSecretKey').val();
+                
+                if (!region) {
+                    alert('Please enter AWS region');
+                    return;
+                }
+                
+                if (!accessKey) {
+                    alert('Please enter AWS Access Key ID');
+                    return;
+                }
+                
+                settings.ses_region = region;
+                settings.ses_access_key = accessKey;
+                if (secretKey) {
+                    settings.ses_secret_key = secretKey;
+                }
+            } else if (provider === 'postmark') {
+                const token = $('#postmarkToken').val();
+                const serverId = $('#postmarkServerId').val();
+                
+                if (!serverId) {
+                    alert('Please enter Postmark Server ID');
+                    return;
+                }
+                
+                settings.postmark_server_id = serverId;
+                if (token) {
+                    settings.postmark_token = token;
+                }
+            } else if (provider === 'sparkpost') {
+                const apiKey = $('#sparkpostApiKey').val();
+                if (apiKey) {
+                    settings.sparkpost_api_key = apiKey;
+                }
+            } else if (provider === 'mailjet') {
+                const apiKey = $('#mailjetApiKey').val();
+                const secretKey = $('#mailjetSecretKey').val();
+                
+                if (!apiKey) {
+                    alert('Please enter Mailjet API Key');
+                    return;
+                }
+                
+                settings.mailjet_api_key = apiKey;
+                if (secretKey) {
+                    settings.mailjet_secret_key = secretKey;
+                }
+            } else if (provider === 'mandrill') {
+                const apiKey = $('#mandrillApiKey').val();
+                if (apiKey) {
+                    settings.mandrill_api_key = apiKey;
+                }
+            } else if (provider === 'sendinblue') {
+                const apiKey = $('#sendinblueApiKey').val();
+                if (apiKey) {
+                    settings.sendinblue_api_key = apiKey;
+                }
+            } else if (provider === 'pepipost') {
+                const apiKey = $('#pepipostApiKey').val();
+                if (apiKey) {
+                    settings.pepipost_api_key = apiKey;
+                }
+            } else if (provider === 'postal') {
+                const serverUrl = $('#postalServerUrl').val();
+                const apiKey = $('#postalApiKey').val();
+                
+                if (!serverUrl) {
+                    alert('Please enter Postal Server URL');
+                    return;
+                }
+                
+                settings.postal_server_url = serverUrl;
+                if (apiKey) {
+                    settings.postal_api_key = apiKey;
+                }
+            }
+            
+            // Show loading state
+            const btn = $('button:contains("Save Email Settings")');
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Saving...');
+            
+            $.ajax({
+                url: '/api/admin/settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(settings),
+                dataType: 'json',
+                timeout: 10000,
+                success: function(response) {
+                    btn.prop('disabled', false).html(originalText);
+                    if (response.success || response.message) {
+                        alert('Email settings saved successfully!');
+                    } else {
+                        alert('Settings saved but no confirmation received');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    btn.prop('disabled', false).html(originalText);
+                    
+                    let errorMsg = 'Unknown error';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseText) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMsg = response.error || errorMsg;
+                        } catch (e) {
+                            errorMsg = xhr.statusText || error || 'Request failed';
+                        }
+                    } else {
+                        errorMsg = status === 'timeout' ? 'Request timed out' : (error || 'Network error');
+                    }
+                    
+                    alert('Error saving email settings:\n\n' + errorMsg);
+                    console.error('Email settings save error:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        error: error
+                    });
+                }
+            });
+        };
+        
+        window.testEmailSettings = function() {
+            const fromEmail = $('#emailFrom').val();
+            if (!fromEmail) {
+                alert('Please configure and save email settings first');
+                return;
+            }
+            
+            const testEmail = prompt('Enter email address to send test email to:', '');
+            if (!testEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            if (!confirm('Send test email to ' + testEmail + '?')) {
+                return;
+            }
+            
+            const btn = $('button:contains("Send Test Email")');
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Sending...');
+            
+            $.ajax({
+                url: '/api/admin/settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    test_email: true,
+                    test_email_to: testEmail
+                }),
+                dataType: 'json',
+                timeout: 15000,
+                success: function(response) {
+                    btn.prop('disabled', false).html(originalText);
+                    if (response.success || response.message) {
+                        alert('Test email sent successfully! Check ' + testEmail + ' for the message.');
+                    } else {
+                        alert('Test email may have been sent, but no confirmation received.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    btn.prop('disabled', false).html(originalText);
+                    
+                    let errorMsg = 'Unknown error';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseText) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            errorMsg = response.error || errorMsg;
+                        } catch (e) {
+                            errorMsg = xhr.statusText || error || 'Request failed';
+                        }
+                    } else {
+                        errorMsg = status === 'timeout' ? 'Request timed out' : (error || 'Network error');
+                    }
+                    
+                    alert('Error sending test email:\n\n' + errorMsg);
+                    console.error('Test email error:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        error: error
+                    });
+                }
+            });
+        };
+        
+        // Load email settings when settings tab is shown
+        $('#settings-tab').on('shown.bs.tab', function() {
+            setTimeout(function() {
+                loadEmailSettings();
+            }, 100);
+        });
+        
+        // Initialize email provider fields on page load
+        updateEmailProviderFields();
     });
 })();
 </script>

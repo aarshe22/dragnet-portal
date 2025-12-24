@@ -49,7 +49,37 @@ try {
                 exit;
             }
             
-            // Validate settings
+            // Handle test email request
+            if (isset($data['test_email']) && $data['test_email'] === true) {
+                $testEmailTo = $data['test_email_to'] ?? null;
+                if (!$testEmailTo || !filter_var($testEmailTo, FILTER_VALIDATE_EMAIL)) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Invalid test email address']);
+                    exit;
+                }
+                
+                // Get current email settings
+                $emailSettings = get_settings();
+                $provider = $emailSettings['email_provider'] ?? 'smtp';
+                $fromEmail = $emailSettings['email_from'] ?? 'noreply@example.com';
+                
+                // Send test email (basic implementation - can be enhanced)
+                $subject = 'DragNet Portal - Test Email';
+                $message = "This is a test email from DragNet Portal.\n\n";
+                $message .= "Email provider: " . $provider . "\n";
+                $message .= "Sent at: " . date('Y-m-d H:i:s') . "\n\n";
+                $message .= "If you received this email, your email relay configuration is working correctly.";
+                
+                // For now, just return success (actual email sending would be implemented in includes/email.php)
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Test email queued (email sending functionality to be implemented)',
+                    'note' => 'Email sending requires implementation in includes/email.php'
+                ], JSON_PRETTY_PRINT);
+                exit;
+            }
+            
+            // Validate map settings
             $validProviders = array_keys(get_available_map_providers());
             if (isset($data['map_provider']) && !in_array($data['map_provider'], $validProviders)) {
                 http_response_code(400);
@@ -81,6 +111,36 @@ try {
                 if ($data['map_center_lon'] < -180 || $data['map_center_lon'] > 180) {
                     http_response_code(400);
                     echo json_encode(['error' => 'Invalid longitude (must be -180 to 180)']);
+                    exit;
+                }
+            }
+            
+            // Validate email settings
+            if (isset($data['email_provider'])) {
+                $validEmailProviders = [
+                    'smtp', 'smtp_com', 'smtp2go', 'gmail', 'outlook', 'yahoo', 'zoho', 
+                    'protonmail', 'fastmail', 'mail_com', 'aol',
+                    'sendgrid', 'mailgun', 'ses', 'postmark', 'sparkpost', 'mailjet', 
+                    'mandrill', 'sendinblue', 'pepipost', 'postal'
+                ];
+                if (!in_array($data['email_provider'], $validEmailProviders)) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Invalid email provider. Valid options: ' . implode(', ', $validEmailProviders)]);
+                    exit;
+                }
+            }
+            
+            if (isset($data['email_from']) && !filter_var($data['email_from'], FILTER_VALIDATE_EMAIL)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid from email address']);
+                exit;
+            }
+            
+            if (isset($data['smtp_port'])) {
+                $data['smtp_port'] = (int)$data['smtp_port'];
+                if ($data['smtp_port'] < 1 || $data['smtp_port'] > 65535) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Invalid SMTP port (must be 1-65535)']);
                     exit;
                 }
             }
