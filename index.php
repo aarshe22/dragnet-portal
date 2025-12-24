@@ -1,39 +1,36 @@
 <?php
 
 /**
- * DragNet Portal - Front Controller
+ * DragNet Portal - Front Controller (Procedural)
  * 
- * Single entry point for all requests. Handles routing, authentication,
- * tenant isolation, and dispatches to appropriate controllers.
+ * Single entry point for all requests. Handles routing and dispatches to functions.
  */
 
-require_once __DIR__ . '/vendor/autoload.php';
-
-use DragNet\Core\Application;
-use DragNet\Core\Router;
-use DragNet\Core\Database;
-use DragNet\Core\Session;
-use DragNet\Core\TenantContext;
-use DragNet\Core\EnvLoader;
+// Load all includes
+require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/models.php';
+require_once __DIR__ . '/includes/controllers.php';
+require_once __DIR__ . '/includes/controllers_remaining.php';
+require_once __DIR__ . '/includes/teltonika.php';
 
 // Load .env file if it exists
-EnvLoader::load(__DIR__);
+load_env(__DIR__);
 
 // Load configuration
 $config = require __DIR__ . '/config/config.php';
-
-// Initialize session
-Session::start($config['session']);
+$GLOBALS['config'] = $config;
 
 // Initialize database connection
-$db = Database::getInstance($config['database']);
+db_init($config['database']);
 
-// Initialize application
-$app = new Application($config, $db);
+// Initialize session
+session_start_custom($config['session']);
 
 // Load routes
 $routes = require __DIR__ . '/config/routes.php';
-$router = new Router($routes);
 
 // Get current request
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -47,7 +44,7 @@ $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
 // Route the request
 try {
-    $route = $router->match($method, $path);
+    $route = find_route($method, $path, $routes);
     
     if (!$route) {
         http_response_code(404);
@@ -55,52 +52,41 @@ try {
         exit;
     }
     
-    // Extract controller and method
-    [$controllerName, $methodName] = explode('@', $route['handler']);
+    // Get handler function name
+    $handler = $route['handler'];
     
-    // Resolve tenant context (from session or SSO)
-    $tenantContext = TenantContext::fromSession();
+    // Resolve tenant context (from session)
+    $tenantContext = get_tenant_context();
     
     if (!$tenantContext && !in_array($path, ['/login', '/auth/callback', '/auth/saml', '/auth/oauth'])) {
         // Redirect to login if not authenticated
-        header('Location: /login');
-        exit;
+        redirect('/login');
     }
     
-    // Set tenant context in application
-    if ($tenantContext) {
-        $app->setTenantContext($tenantContext);
+    // Check if handler is a function
+    if (!function_exists($handler)) {
+        throw new Exception("Handler function {$handler} not found");
     }
     
-    // Load controller
-    $controllerClass = "DragNet\\Controllers\\{$controllerName}";
-    if (!class_exists($controllerClass)) {
-        throw new Exception("Controller {$controllerClass} not found");
-    }
-    
-    $controller = new $controllerClass($app);
-    
-    // Check if method exists
-    if (!method_exists($controller, $methodName)) {
-        throw new Exception("Method {$methodName} not found in {$controllerClass}");
-    }
-    
-    // Execute controller method with route parameters
-    $response = $controller->$methodName($route['params'] ?? []);
+    // Execute handler function with route parameters
+    $response = $handler($route['params'] ?? []);
     
     // Output response
-    if (is_array($response) || is_object($response)) {
+    if (is_string($response)) {
+        // HTML view
+        echo $response;
+    } elseif (is_array($response) || is_object($response)) {
+        // JSON response (if function didn't exit)
         header('Content-Type: application/json');
         echo json_encode($response);
-    } else {
-        echo $response;
     }
+    // If function called json_response() or redirect(), it already exited
     
 } catch (Throwable $e) {
     http_response_code(500);
     error_log($e->getMessage() . "\n" . $e->getTraceAsString());
     
-    // Try to get config for debug setting, but handle if config fails
+    // Try to get config for debug setting
     $debug = false;
     try {
         if (isset($config) && isset($config['app']['debug'])) {
@@ -133,4 +119,3 @@ try {
         }
     }
 }
-
