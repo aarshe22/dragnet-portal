@@ -9,23 +9,57 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/tenant.php';
 
 /**
+ * Check if settings table exists
+ */
+function settings_table_exists(): bool
+{
+    try {
+        db_fetch_one("SELECT 1 FROM settings LIMIT 1");
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
  * Get application settings
  */
 function get_settings(?int $tenantId = null): array
 {
-    if ($tenantId === null) {
-        $tenantId = require_tenant();
-    }
-    
-    // For now, store in config. In production, could use a settings table
-    $config = $GLOBALS['config'] ?? [];
-    
-    return [
+    // Default values
+    $defaults = [
         'map_provider' => $_ENV['MAP_PROVIDER'] ?? 'openstreetmap',
         'map_zoom' => $_ENV['MAP_ZOOM'] ?? 10,
         'map_center_lat' => $_ENV['MAP_CENTER_LAT'] ?? 40.7128,
         'map_center_lon' => $_ENV['MAP_CENTER_LON'] ?? -74.0060,
     ];
+    
+    // Try to get from database first
+    if (!settings_table_exists()) {
+        return $defaults;
+    }
+    
+    try {
+        $settings = db_fetch_all(
+            "SELECT setting_key, setting_value FROM settings WHERE tenant_id " . ($tenantId ? "= :tenant_id" : "IS NULL"),
+            $tenantId ? ['tenant_id' => $tenantId] : []
+        );
+        
+        $result = [];
+        foreach ($settings as $setting) {
+            $value = $setting['setting_value'];
+            // Try to decode JSON, otherwise use as string
+            $decoded = json_decode($value, true);
+            $result[$setting['setting_key']] = $decoded !== null ? $decoded : $value;
+        }
+        
+        // Merge with defaults
+        return array_merge($defaults, $result);
+    } catch (Exception $e) {
+        // If settings table doesn't exist or query fails, return defaults
+        error_log('Failed to get settings: ' . $e->getMessage());
+        return $defaults;
+    }
 }
 
 /**
@@ -33,14 +67,33 @@ function get_settings(?int $tenantId = null): array
  */
 function save_settings(array $settings, ?int $tenantId = null): bool
 {
-    // In production, this would save to a settings table
-    // For now, we'll store in session/cache or return success
-    // The actual implementation would depend on your storage preference
+    if (!settings_table_exists()) {
+        throw new Exception('Settings table does not exist. Please run: mysql -u root -p dragnet < database/migrations/add_settings_table.sql');
+    }
     
-    // Could use a settings table:
-    // INSERT INTO settings (tenant_id, key, value) VALUES (...) ON DUPLICATE KEY UPDATE value = ...
-    
-    return true;
+    try {
+        db_begin_transaction();
+        
+        foreach ($settings as $key => $value) {
+            db_execute(
+                "INSERT INTO settings (tenant_id, setting_key, setting_value) 
+                 VALUES (:tenant_id, :key, :value)
+                 ON DUPLICATE KEY UPDATE setting_value = :value, updated_at = NOW()",
+                [
+                    'tenant_id' => $tenantId,
+                    'key' => $key,
+                    'value' => is_array($value) ? json_encode($value) : (string)$value
+                ]
+            );
+        }
+        
+        db_commit();
+        return true;
+    } catch (Exception $e) {
+        db_rollback();
+        error_log('Failed to save settings: ' . $e->getMessage());
+        throw $e;
+    }
 }
 
 /**
@@ -158,4 +211,3 @@ function get_available_map_providers(): array
         ],
     ];
 }
-

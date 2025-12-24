@@ -35,15 +35,29 @@ switch ($method) {
             json_response(['error' => 'Invalid map provider'], 400);
         }
         
-        // In production, save to database settings table
-        // For now, we'll store in session or return success
-        // You could create a settings table:
-        // CREATE TABLE settings (id INT PRIMARY KEY AUTO_INCREMENT, tenant_id INT, setting_key VARCHAR(100), setting_value TEXT, UNIQUE KEY (tenant_id, setting_key));
+        // Validate numeric values
+        if (isset($data['map_zoom']) && (!is_numeric($data['map_zoom']) || $data['map_zoom'] < 1 || $data['map_zoom'] > 20)) {
+            json_response(['error' => 'Invalid zoom level (must be 1-20)'], 400);
+        }
         
-        // For demo, we'll just return success
-        // In production: save_settings($data);
+        if (isset($data['map_center_lat']) && (!is_numeric($data['map_center_lat']) || $data['map_center_lat'] < -90 || $data['map_center_lat'] > 90)) {
+            json_response(['error' => 'Invalid latitude (must be -90 to 90)'], 400);
+        }
         
-        json_response(['message' => 'Settings saved', 'settings' => $data]);
+        if (isset($data['map_center_lon']) && (!is_numeric($data['map_center_lon']) || $data['map_center_lon'] < -180 || $data['map_center_lon'] > 180)) {
+            json_response(['error' => 'Invalid longitude (must be -180 to 180)'], 400);
+        }
+        
+        // Save settings (global settings, tenant_id = null for admin)
+        try {
+            if (save_settings($data, null)) {
+                json_response(['message' => 'Settings saved successfully', 'settings' => $data]);
+            } else {
+                json_response(['error' => 'Failed to save settings'], 500);
+            }
+        } catch (Exception $e) {
+            json_response(['error' => $e->getMessage()], 500);
+        }
         break;
         
     default:

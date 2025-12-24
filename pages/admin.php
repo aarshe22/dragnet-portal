@@ -501,11 +501,23 @@ function saveMapSettings() {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(settings),
-        success: function() {
+        success: function(response) {
             alert('Map settings saved successfully!');
+            updateMapPreview();
         },
         error: function(xhr) {
-            alert('Error saving settings: ' + (xhr.responseJSON?.error || 'Unknown error'));
+            let errorMsg = 'Unknown error';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            } else if (xhr.responseText) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.error || errorMsg;
+                } catch (e) {
+                    errorMsg = xhr.statusText || 'Failed to save settings';
+                }
+            }
+            alert('Error saving settings: ' + errorMsg + '\n\nNote: You may need to run the database migration to create the settings table:\nmysql -u root -p dragnet < database/migrations/add_settings_table.sql');
         }
     });
 }
