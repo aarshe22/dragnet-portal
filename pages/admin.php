@@ -53,6 +53,11 @@ ob_start();
                     <i class="fas fa-list-alt me-1"></i>Telematics Logs
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button">
+                    <i class="fas fa-cog me-1"></i>Settings
+                </button>
+            </li>
         </ul>
         
         <div class="tab-content" id="adminTabContent">
@@ -151,6 +156,72 @@ ob_start();
                                     <!-- Loaded via AJAX -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Application Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6><i class="fas fa-map me-2"></i>Map Provider Settings</h6>
+                            <p class="text-muted">Select the default mapping provider for the Live Map view.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Map Provider</label>
+                                    <select class="form-select" id="mapProviderSelect" onchange="updateMapPreview()">
+                                        <option value="openstreetmap">OpenStreetMap</option>
+                                        <option value="openstreetmap_fr">OpenStreetMap France</option>
+                                        <option value="openstreetmap_de">OpenStreetMap DE</option>
+                                        <option value="cartodb_positron">CartoDB Positron</option>
+                                        <option value="cartodb_dark">CartoDB Dark Matter</option>
+                                        <option value="stamen_terrain">Stamen Terrain</option>
+                                        <option value="stamen_toner">Stamen Toner</option>
+                                        <option value="stamen_watercolor">Stamen Watercolor</option>
+                                        <option value="esri_worldstreetmap">Esri World Street Map</option>
+                                        <option value="esri_worldtopomap">Esri World Topo Map</option>
+                                        <option value="esri_worldimagery">Esri World Imagery</option>
+                                        <option value="opentopomap">OpenTopoMap</option>
+                                        <option value="cyclosm">CyclOSM</option>
+                                        <option value="wikimedia">Wikimedia Maps</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Zoom Level</label>
+                                    <input type="number" class="form-control" id="mapZoom" min="1" max="20" value="10">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Center Latitude</label>
+                                    <input type="number" class="form-control" id="mapCenterLat" step="0.000001" value="40.7128">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Center Longitude</label>
+                                    <input type="number" class="form-control" id="mapCenterLon" step="0.000001" value="-74.0060">
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <div id="mapPreview" style="height: 300px; border: 1px solid #ddd; border-radius: 0.375rem;"></div>
+                                <small class="text-muted">Preview of selected map provider</small>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button class="btn btn-primary" onclick="saveMapSettings()">
+                                    <i class="fas fa-save me-1"></i>Save Map Settings
+                                </button>
+                                <button class="btn btn-secondary" onclick="loadMapSettings()">
+                                    <i class="fas fa-sync me-1"></i>Reset to Defaults
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -338,6 +409,107 @@ ob_start();
 </div>
 
 <script src="/public/js/admin.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let mapPreview = null;
+
+$(document).ready(function() {
+    loadMapSettings();
+    
+    // Initialize map preview when settings tab is shown
+    $('#settings-tab').on('shown.bs.tab', function() {
+        setTimeout(function() {
+            if (!mapPreview) {
+                initMapPreview();
+            }
+        }, 100);
+    });
+});
+
+function initMapPreview() {
+    if (mapPreview) {
+        mapPreview.remove();
+    }
+    
+    mapPreview = L.map('mapPreview').setView([40.7128, -74.0060], 10);
+    updateMapPreview();
+}
+
+function updateMapPreview() {
+    if (!mapPreview) {
+        initMapPreview();
+        return;
+    }
+    
+    const provider = $('#mapProviderSelect').val();
+    const providers = {
+        'openstreetmap': { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors', sub: ['a', 'b', 'c'] },
+        'openstreetmap_fr': { url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', attr: '© OpenStreetMap France | © OpenStreetMap contributors', sub: ['a', 'b', 'c'] },
+        'openstreetmap_de': { url: 'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', attr: '© OpenStreetMap DE | © OpenStreetMap contributors', sub: ['a', 'b', 'c'] },
+        'cartodb_positron': { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr: '© OpenStreetMap contributors © CARTO', sub: ['a', 'b', 'c', 'd'] },
+        'cartodb_dark': { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '© OpenStreetMap contributors © CARTO', sub: ['a', 'b', 'c', 'd'] },
+        'stamen_terrain': { url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', attr: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.', sub: ['a', 'b', 'c', 'd'] },
+        'stamen_toner': { url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.png', attr: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.', sub: ['a', 'b', 'c', 'd'] },
+        'stamen_watercolor': { url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', attr: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.', sub: ['a', 'b', 'c', 'd'] },
+        'esri_worldstreetmap': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri', sub: [] },
+        'esri_worldtopomap': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri', sub: [] },
+        'esri_worldimagery': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri', sub: [] },
+        'opentopomap': { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)', sub: ['a', 'b', 'c'] },
+        'cyclosm': { url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors, style by CyclOSM', sub: ['a', 'b', 'c'] },
+        'wikimedia': { url: 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors', sub: [] }
+    };
+    
+    const config = providers[provider] || providers['openstreetmap'];
+    
+    // Remove existing tiles
+    mapPreview.eachLayer(function(layer) {
+        if (layer instanceof L.TileLayer) {
+            mapPreview.removeLayer(layer);
+        }
+    });
+    
+    // Add new tiles
+    const tileLayer = L.tileLayer(config.url, {
+        attribution: config.attr,
+        maxZoom: 19,
+        subdomains: config.sub.length > 0 ? config.sub : undefined
+    });
+    
+    tileLayer.addTo(mapPreview);
+}
+
+function loadMapSettings() {
+    $.get('/api/admin/settings.php', function(settings) {
+        $('#mapProviderSelect').val(settings.map_provider || 'openstreetmap');
+        $('#mapZoom').val(settings.map_zoom || 10);
+        $('#mapCenterLat').val(settings.map_center_lat || 40.7128);
+        $('#mapCenterLon').val(settings.map_center_lon || -74.0060);
+        updateMapPreview();
+    });
+}
+
+function saveMapSettings() {
+    const settings = {
+        map_provider: $('#mapProviderSelect').val(),
+        map_zoom: parseInt($('#mapZoom').val()),
+        map_center_lat: parseFloat($('#mapCenterLat').val()),
+        map_center_lon: parseFloat($('#mapCenterLon').val())
+    };
+    
+    $.ajax({
+        url: '/api/admin/settings.php',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(settings),
+        success: function() {
+            alert('Map settings saved successfully!');
+        },
+        error: function(xhr) {
+            alert('Error saving settings: ' + (xhr.responseJSON?.error || 'Unknown error'));
+        }
+    });
+}
+</script>
 
 <?php
 $content = ob_get_clean();
