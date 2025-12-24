@@ -106,5 +106,30 @@ class DeviceController extends BaseController
             'signal_strength' => $device['signal_strength'],
         ]);
     }
+    
+    /**
+     * Register Teltonika device by IMEI
+     */
+    public function registerTeltonika(): array
+    {
+        $this->requireTenant();
+        $this->requireRole('Operator');
+        
+        $imei = $this->input('imei');
+        $deviceUid = $this->input('device_uid');
+        
+        if (empty($imei)) {
+            return $this->json(['error' => 'IMEI is required'], 400);
+        }
+        
+        $deviceModel = new Device($this->app);
+        $device = $deviceModel->registerTeltonika($imei, $this->requireTenant(), $deviceUid);
+        
+        return $this->json([
+            'id' => $device['id'],
+            'message' => 'Teltonika device registered',
+            'device' => $device
+        ]);
+    }
 }
 

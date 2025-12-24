@@ -67,5 +67,51 @@ class Device extends BaseModel
         
         $this->update($deviceId, ['status' => $status]);
     }
+    
+    /**
+     * Find device by IMEI
+     */
+    public function findByImei(string $imei, ?int $tenantId = null): ?array
+    {
+        $where = ["imei = :imei"];
+        $params = ['imei' => $imei];
+        
+        if ($tenantId !== null) {
+            $where[] = "tenant_id = :tenant_id";
+            $params['tenant_id'] = $tenantId;
+        } elseif ($this->tenantId !== null) {
+            $where[] = $this->tenantWhere();
+            $params = array_merge($params, $this->tenantParams());
+        }
+        
+        $sql = "SELECT * FROM {$this->table} WHERE " . implode(' AND ', $where);
+        return $this->db->fetchOne($sql, $params);
+    }
+    
+    /**
+     * Register Teltonika device by IMEI
+     */
+    public function registerTeltonika(string $imei, int $tenantId, string $deviceUid = null): array
+    {
+        // Check if already exists
+        $existing = $this->findByImei($imei);
+        if ($existing) {
+            return $existing;
+        }
+        
+        // Create new device
+        $deviceUid = $deviceUid ?? 'TELTONIKA_' . $imei;
+        
+        $deviceId = $this->create([
+            'tenant_id' => $tenantId,
+            'device_uid' => $deviceUid,
+            'imei' => $imei,
+            'device_type' => 'teltonika_fmm13a',
+            'protocol' => 'http',
+            'status' => 'offline',
+        ]);
+        
+        return $this->find($deviceId);
+    }
 }
 

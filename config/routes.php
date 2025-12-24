@@ -43,6 +43,7 @@ return [
     'GET /api/devices/:id' => 'DeviceController@get',
     'GET /api/devices/:id/telemetry' => 'DeviceController@getTelemetry',
     'GET /api/devices/:id/status' => 'DeviceController@getStatus',
+    'POST /api/devices/register-teltonika' => 'DeviceController@registerTeltonika',
     
     // Alerts
     'GET /alerts' => 'AlertController@index',
