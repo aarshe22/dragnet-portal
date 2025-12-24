@@ -515,9 +515,23 @@ function saveMapSettings() {
                     errorMsg = response.error || errorMsg;
                 } catch (e) {
                     errorMsg = xhr.statusText || 'Failed to save settings';
+                    if (xhr.responseText) {
+                        errorMsg += '\n\nResponse: ' + xhr.responseText.substring(0, 200);
+                    }
                 }
             }
-            alert('Error saving settings: ' + errorMsg + '\n\nNote: You may need to run the database migration to create the settings table:\nmysql -u root -p dragnet < database/migrations/add_settings_table.sql');
+            
+            let fullMessage = 'Error saving settings: ' + errorMsg;
+            
+            // Check if it's a table missing error
+            if (errorMsg.includes('does not exist') || errorMsg.includes('Table') || errorMsg.includes('Unknown table')) {
+                fullMessage += '\n\nTo fix this, run one of these commands:\n';
+                fullMessage += 'mysql -u root -p dragnet < database/migrations/add_settings_table.sql\n';
+                fullMessage += 'OR (if foreign key error):\n';
+                fullMessage += 'mysql -u root -p dragnet < database/migrations/add_settings_table_safe.sql';
+            }
+            
+            alert(fullMessage);
         }
     });
 }

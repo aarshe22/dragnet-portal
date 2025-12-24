@@ -56,7 +56,17 @@ switch ($method) {
                 json_response(['error' => 'Failed to save settings'], 500);
             }
         } catch (Exception $e) {
-            json_response(['error' => $e->getMessage()], 500);
+            $errorMsg = $e->getMessage();
+            if ($config['app']['debug']) {
+                $errorMsg .= ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine();
+            }
+            json_response(['error' => $errorMsg], 500);
+        } catch (Throwable $e) {
+            $errorMsg = $e->getMessage();
+            if ($config['app']['debug']) {
+                $errorMsg .= ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine();
+            }
+            json_response(['error' => $errorMsg], 500);
         }
         break;
         

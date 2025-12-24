@@ -14,8 +14,18 @@ require_once __DIR__ . '/tenant.php';
 function settings_table_exists(): bool
 {
     try {
+        // Try to query the table
         db_fetch_one("SELECT 1 FROM settings LIMIT 1");
         return true;
+    } catch (PDOException $e) {
+        // Check if it's a "table doesn't exist" error
+        if (strpos($e->getMessage(), "doesn't exist") !== false || 
+            strpos($e->getMessage(), "Unknown table") !== false ||
+            strpos($e->getMessage(), "Table") !== false && strpos($e->getMessage(), "doesn't exist") !== false) {
+            return false;
+        }
+        // Other database errors - rethrow
+        throw $e;
     } catch (Exception $e) {
         return false;
     }
@@ -68,27 +78,55 @@ function get_settings(?int $tenantId = null): array
 function save_settings(array $settings, ?int $tenantId = null): bool
 {
     if (!settings_table_exists()) {
-        throw new Exception('Settings table does not exist. Please run: mysql -u root -p dragnet < database/migrations/add_settings_table.sql');
+        throw new Exception('Settings table does not exist. Please run: mysql -u root -p dragnet < database/migrations/add_settings_table_safe.sql');
     }
     
     try {
         db_begin_transaction();
         
         foreach ($settings as $key => $value) {
-            db_execute(
-                "INSERT INTO settings (tenant_id, setting_key, setting_value) 
-                 VALUES (:tenant_id, :key, :value)
-                 ON DUPLICATE KEY UPDATE setting_value = :value, updated_at = NOW()",
-                [
-                    'tenant_id' => $tenantId,
-                    'key' => $key,
-                    'value' => is_array($value) ? json_encode($value) : (string)$value
-                ]
-            );
+            // Convert value to string
+            $stringValue = is_array($value) ? json_encode($value) : (string)$value;
+            
+            // Use NULL for tenant_id if not provided (global settings)
+            $params = [
+                'tenant_id' => $tenantId,
+                'key' => $key,
+                'value' => $stringValue
+            ];
+            
+            // Try insert first, then update if duplicate
+            try {
+                db_execute(
+                    "INSERT INTO settings (tenant_id, setting_key, setting_value) 
+                     VALUES (:tenant_id, :key, :value)",
+                    $params
+                );
+            } catch (PDOException $e) {
+                // If duplicate key error, update instead
+                if (strpos($e->getMessage(), 'Duplicate entry') !== false || 
+                    strpos($e->getMessage(), '23000') !== false) {
+                    db_execute(
+                        "UPDATE settings SET setting_value = :value, updated_at = NOW() 
+                         WHERE tenant_id " . ($tenantId ? "= :tenant_id" : "IS NULL") . " AND setting_key = :key",
+                        $params
+                    );
+                } else {
+                    throw $e;
+                }
+            }
         }
         
         db_commit();
         return true;
+    } catch (PDOException $e) {
+        db_rollback();
+        $errorMsg = 'Database error: ' . $e->getMessage();
+        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+            $errorMsg .= ' (Duplicate key - trying update instead)';
+        }
+        error_log('Failed to save settings: ' . $errorMsg);
+        throw new Exception($errorMsg);
     } catch (Exception $e) {
         db_rollback();
         error_log('Failed to save settings: ' . $e->getMessage());

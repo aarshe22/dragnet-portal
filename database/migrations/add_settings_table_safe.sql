@@ -1,4 +1,8 @@
--- Add settings table for storing application settings
+-- Add settings table for storing application settings (safe version)
+-- This version doesn't require the tenants table to exist first
+
+SET FOREIGN_KEY_CHECKS = 0;
+
 CREATE TABLE IF NOT EXISTS settings (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id INT UNSIGNED NULL,
@@ -6,13 +10,11 @@ CREATE TABLE IF NOT EXISTS settings (
     setting_value TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     UNIQUE KEY uk_tenant_setting (tenant_id, setting_key),
     INDEX idx_tenant (tenant_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Note: If you get a foreign key constraint error, you may need to temporarily disable foreign key checks:
--- SET FOREIGN_KEY_CHECKS = 0;
--- (run the CREATE TABLE statement)
--- SET FOREIGN_KEY_CHECKS = 1;
+SET FOREIGN_KEY_CHECKS = 1;
 
+-- Add foreign key constraint separately if tenants table exists
+-- ALTER TABLE settings ADD CONSTRAINT fk_settings_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE;
