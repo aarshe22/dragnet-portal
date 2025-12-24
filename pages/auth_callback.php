@@ -24,11 +24,24 @@ if ($provider === 'dev' || ($_SERVER['REQUEST_METHOD'] === 'POST' && $email)) {
         redirect('/login.php?error=email_required');
     }
     
-    // Verify tenant exists
+    // Verify tenant exists, create if missing (development mode)
     $tenant = db_fetch_one("SELECT id FROM tenants WHERE id = :id", ['id' => $tenantId]);
     
     if (!$tenant) {
-        redirect('/login.php?error=tenant_not_found');
+        // In development mode (dev provider), auto-create tenant
+        try {
+            db_execute(
+                "INSERT INTO tenants (id, name, region) VALUES (:id, :name, 'us-east')",
+                ['id' => $tenantId, 'name' => 'Development Tenant ' . $tenantId]
+            );
+            $tenant = db_fetch_one("SELECT id FROM tenants WHERE id = :id", ['id' => $tenantId]);
+        } catch (Exception $e) {
+            // If insert fails (e.g., tenant already exists from another request), try to fetch again
+            $tenant = db_fetch_one("SELECT id FROM tenants WHERE id = :id", ['id' => $tenantId]);
+            if (!$tenant) {
+                redirect('/login.php?error=tenant_not_found&details=' . urlencode($e->getMessage()));
+            }
+        }
     }
     
     // For dev mode, set default role to Administrator for first user
