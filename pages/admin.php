@@ -2252,7 +2252,7 @@ ob_start();
                     select.empty().append('<option value="">Select Device</option>');
                     if (response.devices) {
                         response.devices.forEach(device => {
-                            select.append(`<option value="${device.id}">${escapeHtml(device.name || device.device_uid)} (${escapeHtml(device.imei || 'N/A')})</option>`);
+                            select.append(`<option value="${device.id}">${escapeHtml(device.device_uid)} (${escapeHtml(device.imei || 'N/A')})</option>`);
                         });
                     }
                 }

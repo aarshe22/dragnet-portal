@@ -88,7 +88,7 @@ switch ($action) {
         // Get list of devices for simulator
         $context = get_tenant_context();
         $devices = db_fetch_all(
-            "SELECT id, device_uid, imei, name, status FROM devices WHERE tenant_id = :tenant_id ORDER BY name",
+            "SELECT id, device_uid, imei, status FROM devices WHERE tenant_id = :tenant_id ORDER BY device_uid",
             ['tenant_id' => $context['tenant_id']]
         );
         
