@@ -116,3 +116,12 @@ function db_rollback(): bool
     return db()->rollBack();
 }
 
+/**
+ * Execute raw SQL (for migrations, DDL statements, etc.)
+ * Use this for SQL that doesn't need parameter binding
+ */
+function db_exec_raw(string $sql): int
+{
+    return db()->exec($sql);
+}
+

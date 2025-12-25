@@ -127,29 +127,38 @@ function execute_migration(string $filename, string $filePath, ?int $userId = nu
             throw new Exception("Failed to read migration file: $filename");
         }
         
-        // Remove comments and empty lines for better execution
-        // Split by semicolon to handle multiple statements
-        $statements = array_filter(
-            array_map('trim', explode(';', $sql)),
-            function($stmt) {
-                $stmt = trim($stmt);
-                return !empty($stmt) && 
-                       !preg_match('/^--/', $stmt) && 
-                       !preg_match('/^\/\*/', $stmt);
-            }
-        );
-        
         // Begin transaction
         db_begin_transaction();
         
         try {
+            // For migration files, we need to execute raw SQL
+            // Split by semicolon but be careful about strings and comments
+            // Remove SQL comments first
+            $sql = preg_replace('/--.*$/m', '', $sql); // Remove single-line comments
+            $sql = preg_replace('/\/\*.*?\*\//s', '', $sql); // Remove multi-line comments
+            
+            // Split by semicolon, but preserve empty statements for counting
+            $statements = array_filter(
+                array_map('trim', explode(';', $sql)),
+                function($stmt) {
+                    return !empty(trim($stmt));
+                }
+            );
+            
             $totalRows = 0;
             foreach ($statements as $statement) {
-                if (empty(trim($statement))) {
+                $statement = trim($statement);
+                if (empty($statement)) {
                     continue;
                 }
-                $rows = db_execute($statement);
-                $totalRows += $rows;
+                
+                // Execute raw SQL without parameter binding
+                $rows = db_exec_raw($statement);
+                if ($rows !== false) {
+                    $totalRows += $rows;
+                }
+                // Note: DDL statements (CREATE, ALTER, DROP) return 0 rows affected
+                // which is normal and doesn't indicate failure
             }
             
             // Ensure migrations table exists (for tracking)
