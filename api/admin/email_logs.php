@@ -41,11 +41,17 @@ switch ($method) {
                 $log = db_fetch_one("SELECT * FROM email_logs WHERE id = :id", ['id' => $logId]);
                 if ($log) {
                     // Decode JSON fields
-                    if ($log['response_data']) {
-                        $log['response_data'] = json_decode($log['response_data'], true);
+                    if (!empty($log['response_data'])) {
+                        $decoded = json_decode($log['response_data'], true);
+                        $log['response_data'] = ($decoded !== null) ? $decoded : $log['response_data'];
+                    } else {
+                        $log['response_data'] = null;
                     }
-                    if ($log['debug_data']) {
-                        $log['debug_data'] = json_decode($log['debug_data'], true);
+                    if (!empty($log['debug_data'])) {
+                        $decoded = json_decode($log['debug_data'], true);
+                        $log['debug_data'] = ($decoded !== null) ? $decoded : $log['debug_data'];
+                    } else {
+                        $log['debug_data'] = null;
                     }
                     header('Content-Type: application/json');
                     echo json_encode([
@@ -85,18 +91,27 @@ switch ($method) {
             $sort = 'created_at DESC';
         }
         
-        $logs = get_email_logs($tenantId, $status, null, $provider, $search, $limit, $offset, $sort);
-        $total = get_email_log_count($tenantId, $status, null, $provider, $search);
-        
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true,
-            'logs' => $logs,
-            'total' => $total,
-            'page' => $page,
-            'limit' => $limit,
-            'pages' => ceil($total / $limit)
-        ], JSON_PRETTY_PRINT);
+        try {
+            $logs = get_email_logs($tenantId, $status, null, $provider, $search, $limit, $offset, $sort);
+            $total = get_email_log_count($tenantId, $status, null, $provider, $search);
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'logs' => $logs,
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'pages' => ceil($total / $limit)
+            ], JSON_PRETTY_PRINT);
+        } catch (Exception $e) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch email logs: ' . $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
         exit;
         
     case 'DELETE':

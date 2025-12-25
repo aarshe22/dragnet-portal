@@ -133,19 +133,27 @@ function get_email_logs(
             $sort = 'created_at DESC';
         }
         
-        $sql = "SELECT * FROM email_logs $whereClause ORDER BY $sort LIMIT :limit OFFSET :offset";
-        $params['limit'] = $limit;
-        $params['offset'] = $offset;
+        // LIMIT and OFFSET must be integers, not bound parameters
+        $limit = (int)$limit;
+        $offset = (int)$offset;
+        
+        $sql = "SELECT * FROM email_logs $whereClause ORDER BY $sort LIMIT $limit OFFSET $offset";
         
         $logs = db_fetch_all($sql, $params);
         
         // Decode JSON fields
         foreach ($logs as &$log) {
-            if ($log['response_data']) {
-                $log['response_data'] = json_decode($log['response_data'], true);
+            if (!empty($log['response_data'])) {
+                $decoded = json_decode($log['response_data'], true);
+                $log['response_data'] = ($decoded !== null) ? $decoded : $log['response_data'];
+            } else {
+                $log['response_data'] = null;
             }
-            if ($log['debug_data']) {
-                $log['debug_data'] = json_decode($log['debug_data'], true);
+            if (!empty($log['debug_data'])) {
+                $decoded = json_decode($log['debug_data'], true);
+                $log['debug_data'] = ($decoded !== null) ? $decoded : $log['debug_data'];
+            } else {
+                $log['debug_data'] = null;
             }
         }
         
