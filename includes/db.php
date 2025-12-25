@@ -30,6 +30,7 @@ function db_init(array $config): PDO
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::MYSQL_ATTR_MULTI_STATEMENTS => true, // Allow multiple statements
     ];
     
     $db_connection = new PDO($dsn, $config['user'], $config['password'], $options);
@@ -150,6 +151,24 @@ function db_in_transaction(): bool
  */
 function db_exec_raw(string $sql): int
 {
-    return db()->exec($sql);
+    try {
+        $result = db()->exec($sql);
+        if ($result === false) {
+            $errorInfo = db()->errorInfo();
+            throw new PDOException(
+                'SQL execution failed: ' . ($errorInfo[2] ?? 'Unknown error'),
+                (int)($errorInfo[0] ?? 0)
+            );
+        }
+        return $result;
+    } catch (PDOException $e) {
+        // Re-throw with more context
+        throw new PDOException(
+            'Failed to execute raw SQL: ' . $e->getMessage() . 
+            ' | SQL: ' . substr($sql, 0, 200),
+            (int)$e->getCode(),
+            $e
+        );
+    }
 }
 
