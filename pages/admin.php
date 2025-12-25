@@ -66,7 +66,7 @@ ob_start();
                 <div class="card mt-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Tenant Management</h5>
-                        <button class="btn btn-primary btn-sm" onclick="showTenantModal()">
+                        <button class="btn btn-primary btn-sm" id="btnAddTenant">
                             <i class="fas fa-plus me-1"></i>Add Tenant
                         </button>
                     </div>
@@ -96,13 +96,13 @@ ob_start();
                 <div class="card mt-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">User Management</h5>
-                        <button class="btn btn-primary btn-sm" onclick="showUserModal()">
+                        <button class="btn btn-primary btn-sm" id="btnAddUser">
                             <i class="fas fa-plus me-1"></i>Add User
                         </button>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <input type="text" class="form-control" id="userSearch" placeholder="Search by email or tenant..." onkeyup="loadUsers()">
+                            <input type="text" class="form-control" id="userSearch" placeholder="Search by email or tenant...">
                         </div>
                         <div class="table-responsive">
                             <table class="table table-striped" id="usersTable">
@@ -130,13 +130,13 @@ ob_start();
                 <div class="card mt-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Device Management</h5>
-                        <button class="btn btn-primary btn-sm" onclick="showDeviceModal()">
+                        <button class="btn btn-primary btn-sm" id="btnAddDevice">
                             <i class="fas fa-plus me-1"></i>Add Device
                         </button>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <input type="text" class="form-control" id="deviceSearch" placeholder="Search by IMEI, device UID, or tenant..." onkeyup="loadDevices()">
+                            <input type="text" class="form-control" id="deviceSearch" placeholder="Search by IMEI, device UID, or tenant...">
                         </div>
                         <div class="table-responsive">
                             <table class="table table-striped" id="devicesTable">
@@ -175,7 +175,7 @@ ob_start();
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="form-label">Map Provider</label>
-                                    <select class="form-select" id="mapProviderSelect" onchange="updateMapPreview()">
+                                    <select class="form-select" id="mapProviderSelect">
                                         <option value="openstreetmap">OpenStreetMap</option>
                                         <option value="openstreetmap_fr">OpenStreetMap France</option>
                                         <option value="openstreetmap_de">OpenStreetMap DE</option>
@@ -215,10 +215,10 @@ ob_start();
                             </div>
                             
                             <div class="mt-3">
-                                <button class="btn btn-primary" onclick="saveMapSettings()">
+                                <button class="btn btn-primary" id="btnSaveMapSettings">
                                     <i class="fas fa-save me-1"></i>Save Map Settings
                                 </button>
-                                <button class="btn btn-secondary" onclick="loadMapSettings()">
+                                <button class="btn btn-secondary" id="btnLoadMapSettings">
                                     <i class="fas fa-sync me-1"></i>Reset to Defaults
                                 </button>
                             </div>
@@ -233,7 +233,7 @@ ob_start();
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="form-label">Email Provider</label>
-                                    <select class="form-select" id="emailProviderSelect" onchange="updateEmailProviderFields()">
+                                    <select class="form-select" id="emailProviderSelect">
                                         <optgroup label="SMTP Providers">
                                             <option value="smtp">SMTP (Generic/Custom)</option>
                                             <option value="smtp_com">SMTP.com</option>
@@ -411,13 +411,13 @@ ob_start();
                             </div>
                             
                             <div class="mt-3">
-                                <button class="btn btn-primary" onclick="saveEmailSettings()">
+                                <button class="btn btn-primary" id="btnSaveEmailSettings">
                                     <i class="fas fa-save me-1"></i>Save Email Settings
                                 </button>
-                                <button class="btn btn-secondary" onclick="loadEmailSettings()">
+                                <button class="btn btn-secondary" id="btnLoadEmailSettings">
                                     <i class="fas fa-sync me-1"></i>Reset to Defaults
                                 </button>
-                                <button class="btn btn-info" onclick="testEmailSettings()">
+                                <button class="btn btn-info" id="btnTestEmailSettings">
                                     <i class="fas fa-paper-plane me-1"></i>Send Test Email
                                 </button>
                             </div>
@@ -432,10 +432,10 @@ ob_start();
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Telematics Logs</h5>
                         <div>
-                            <button class="btn btn-sm btn-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
+                            <button class="btn btn-sm btn-secondary" id="autoRefreshBtn">
                                 <i class="fas fa-pause me-1"></i>Pause Auto-Refresh
                             </button>
-                            <button class="btn btn-sm btn-primary" onclick="clearLogs()">
+                            <button class="btn btn-sm btn-primary" id="btnClearLogs">
                                 <i class="fas fa-trash me-1"></i>Clear View
                             </button>
                         </div>
@@ -513,7 +513,7 @@ ob_start();
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveTenant()">Save</button>
+                <button type="button" class="btn btn-primary" id="btnSaveTenant">Save</button>
             </div>
         </div>
     </div>
@@ -554,7 +554,7 @@ ob_start();
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveUser()">Save</button>
+                <button type="button" class="btn btn-primary" id="btnSaveUser">Save</button>
             </div>
         </div>
     </div>
@@ -601,7 +601,7 @@ ob_start();
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDevice()">Save</button>
+                <button type="button" class="btn btn-primary" id="btnSaveDevice">Save</button>
             </div>
         </div>
     </div>
@@ -630,6 +630,51 @@ ob_start();
         let currentLogSearch = '';
         
         $(document).ready(function() {
+            // Attach event listeners for static buttons
+            $('#btnAddTenant').on('click', function() { showTenantModal(); });
+            $('#btnAddUser').on('click', function() { showUserModal(); });
+            $('#btnAddDevice').on('click', function() { showDeviceModal(); });
+            $('#btnSaveTenant').on('click', function() { saveTenant(); });
+            $('#btnSaveUser').on('click', function() { saveUser(); });
+            $('#btnSaveDevice').on('click', function() { saveDevice(); });
+            $('#btnSaveMapSettings').on('click', function() { saveMapSettings(); });
+            $('#btnLoadMapSettings').on('click', function() { loadMapSettings(); });
+            $('#btnSaveEmailSettings').on('click', function() { saveEmailSettings(); });
+            $('#btnLoadEmailSettings').on('click', function() { loadEmailSettings(); });
+            $('#btnTestEmailSettings').on('click', function() { testEmailSettings(); });
+            $('#autoRefreshBtn').on('click', function() { toggleAutoRefresh(); });
+            $('#btnClearLogs').on('click', function() { clearLogs(); });
+            $('#mapProviderSelect').on('change', function() { updateMapPreview(); });
+            $('#emailProviderSelect').on('change', function() { updateEmailProviderFields(); });
+            $('#userSearch').on('keyup', function() { loadUsers(); });
+            $('#deviceSearch').on('keyup', function() { loadDevices(); });
+            
+            // Event delegation for dynamically generated buttons
+            $(document).on('click', '.btn-edit-tenant', function() {
+                const id = $(this).data('id');
+                editTenant(id);
+            });
+            $(document).on('click', '.btn-delete-tenant', function() {
+                const id = $(this).data('id');
+                deleteTenant(id);
+            });
+            $(document).on('click', '.btn-edit-user', function() {
+                const id = $(this).data('id');
+                editUser(id);
+            });
+            $(document).on('click', '.btn-delete-user', function() {
+                const id = $(this).data('id');
+                deleteUser(id);
+            });
+            $(document).on('click', '.btn-edit-device', function() {
+                const id = $(this).data('id');
+                editDevice(id);
+            });
+            $(document).on('click', '.btn-delete-device', function() {
+                const id = $(this).data('id');
+                deleteDevice(id);
+            });
+            
             loadTenants();
             loadUsers();
             loadDevices();
@@ -685,10 +730,10 @@ ob_start();
                             <td>${escapeHtml(tenant.region)}</td>
                             <td>${formatDate(tenant.created_at)}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editTenant(${tenant.id})">
+                                <button class="btn btn-sm btn-primary btn-edit-tenant" data-id="${tenant.id}">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteTenant(${tenant.id})">
+                                <button class="btn btn-sm btn-danger btn-delete-tenant" data-id="${tenant.id}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -792,10 +837,10 @@ ob_start();
                             <td><span class="badge bg-info">${escapeHtml(user.role)}</span></td>
                             <td>${user.last_login ? formatDate(user.last_login) : 'Never'}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">
+                                <button class="btn btn-sm btn-primary btn-edit-user" data-id="${user.id}">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
+                                <button class="btn btn-sm btn-danger btn-delete-user" data-id="${user.id}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -902,10 +947,10 @@ ob_start();
                             <td>${statusBadge}</td>
                             <td>${device.last_seen ? formatDate(device.last_seen) : 'Never'}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editDevice(${device.id})">
+                                <button class="btn btn-sm btn-primary btn-edit-device" data-id="${device.id}">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteDevice(${device.id})">
+                                <button class="btn btn-sm btn-danger btn-delete-device" data-id="${device.id}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
