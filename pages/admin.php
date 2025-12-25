@@ -63,11 +63,6 @@ ob_start();
                     <i class="fas fa-cog me-1"></i>Settings
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="migrations-tab" data-bs-toggle="tab" data-bs-target="#migrations" type="button">
-                    <i class="fas fa-database me-1"></i>Migrations
-                </button>
-            </li>
         </ul>
         
         <div class="tab-content" id="adminTabContent">
@@ -470,34 +465,6 @@ ob_start();
                 </div>
             </div>
             
-            <!-- Migrations Tab -->
-            <div class="tab-pane fade" id="migrations" role="tabpanel">
-                <div class="card mt-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRefreshMigrations">
-                            <i class="fas fa-sync me-1"></i>Refresh
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Migration Management:</strong> This panel allows you to view and apply SQL migration scripts from the <code>/database/migrations</code> directory. 
-                            Only migrations that have not been applied will show an "Apply" button. Applied migrations are tracked in the database.
-                        </div>
-                        
-                        <div id="migrationsTableContainer">
-                            <div class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                <p class="mt-2 text-muted">Loading migrations...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Settings Tab -->
             <div class="tab-pane fade" id="settings" role="tabpanel">
                 <div class="card mt-3">
@@ -789,11 +756,6 @@ ob_start();
             $('#btnClearEmailLogs').on('click', function() { clearEmailLogs(); });
             $('#emailLogStatusFilter, #emailLogProviderFilter, #emailLogSort').on('change', function() { loadEmailLogs(); });
             $('#emailLogSearch').on('keyup', debounce(function() { loadEmailLogs(); }, 500));
-            $('#btnRefreshMigrations').on('click', function() { loadMigrations(); });
-            $(document).on('click', '.btn-apply-migration', function() {
-                const filename = $(this).data('filename');
-                applyMigration(filename);
-            });
             $('#userSearch').on('keyup', function() { loadUsers(); });
             $('#deviceSearch').on('keyup', function() { loadDevices(); });
             
@@ -851,8 +813,6 @@ ob_start();
                     loadLogs();
                 } else if (target === '#email') {
                     loadEmailSettings();
-                } else if (target === '#migrations') {
-                    loadMigrations();
                 } else if (target === '#settings') {
                     setTimeout(function() {
                         if (!mapPreview && typeof L !== 'undefined') {
@@ -1482,7 +1442,6 @@ ob_start();
                     
                     // Add helpful messages for common errors
                     if (errorMsg.includes('does not exist') || errorMsg.includes('Table') || errorMsg.includes('Unknown table')) {
-                        fullMessage += '\n\nTo fix: Run the migration:\nmysql -u root -p dragnet < database/migrations/add_settings_table_safe.sql';
                     } else if (errorMsg.includes('Duplicate entry') || errorMsg.includes('23000')) {
                         fullMessage += '\n\nThis might be a duplicate key error. The settings may have been saved. Try refreshing the page.';
                     } else if (errorMsg.includes('Database error')) {
@@ -2178,185 +2137,6 @@ ob_start();
             loadEmailLogProviders();
         });
         
-        // Migration Management Functions
-        window.loadMigrations = function() {
-            const container = $('#migrationsTableContainer');
-            container.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading migrations...</p></div>');
-            
-            $.ajax({
-                url: '/api/admin/migrations.php',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        displayMigrations(response.migrations, response.migrations_table_exists);
-                    } else {
-                        container.html('<div class="alert alert-danger">Failed to load migrations</div>');
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Failed to load migrations:', xhr);
-                    let errorMsg = 'Failed to load migrations';
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        errorMsg = xhr.responseJSON.error;
-                    }
-                    container.html(`<div class="alert alert-danger">${escapeHtml(errorMsg)}</div>`);
-                }
-            });
-        };
-        
-        window.displayMigrations = function(migrations, tableExists) {
-            const container = $('#migrationsTableContainer');
-            
-            if (!tableExists) {
-                container.html(`
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Migrations table not found.</strong> 
-                        Please run the <code>create_migrations_table.sql</code> migration first to enable migration tracking.
-                    </div>
-                `);
-                return;
-            }
-            
-            if (migrations.length === 0) {
-                container.html('<div class="alert alert-info">No migration files found in /database/migrations</div>');
-                return;
-            }
-            
-            let html = `
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Filename</th>
-                                <th>Size</th>
-                                <th>Modified</th>
-                                <th>Status</th>
-                                <th>Applied At</th>
-                                <th>Execution Time</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            migrations.forEach(migration => {
-                const size = formatFileSize(migration.size);
-                const modified = formatDate(new Date(migration.modified * 1000).toISOString());
-                const appliedAt = migration.applied_at ? formatDate(migration.applied_at) : '-';
-                const execTime = migration.execution_time ? migration.execution_time + 's' : '-';
-                
-                let statusBadge = '';
-                if (migration.applied) {
-                    if (migration.status === 'success') {
-                        statusBadge = '<span class="badge bg-success">Applied</span>';
-                    } else if (migration.status === 'failed') {
-                        statusBadge = '<span class="badge bg-danger">Failed</span>';
-                    } else {
-                        statusBadge = '<span class="badge bg-warning">Partial</span>';
-                    }
-                } else {
-                    statusBadge = '<span class="badge bg-secondary">Not Applied</span>';
-                }
-                
-                let actionButton = '';
-                if (!migration.applied || migration.status !== 'success') {
-                    actionButton = `
-                        <button class="btn btn-sm btn-primary btn-apply-migration" 
-                                data-filename="${escapeHtml(migration.filename)}"
-                                title="Apply this migration">
-                            <i class="fas fa-play me-1"></i>Apply
-                        </button>
-                    `;
-                } else {
-                    actionButton = '<span class="text-muted">-</span>';
-                }
-                
-                let errorInfo = '';
-                if (migration.error_message) {
-                    errorInfo = `
-                        <tr class="table-danger">
-                            <td colspan="7">
-                                <small class="text-danger">
-                                    <strong>Error:</strong> ${escapeHtml(migration.error_message)}
-                                </small>
-                            </td>
-                        </tr>
-                    `;
-                }
-                
-                html += `
-                    <tr ${migration.status === 'failed' ? 'class="table-danger"' : ''}>
-                        <td><code>${escapeHtml(migration.filename)}</code></td>
-                        <td>${size}</td>
-                        <td><small>${modified}</small></td>
-                        <td>${statusBadge}</td>
-                        <td><small>${appliedAt}</small></td>
-                        <td><small>${execTime}</small></td>
-                        <td>${actionButton}</td>
-                    </tr>
-                    ${errorInfo}
-                `;
-            });
-            
-            html += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            container.html(html);
-        };
-        
-        window.applyMigration = function(filename) {
-            if (!confirm(`Are you sure you want to apply the migration "${filename}"?\n\nThis will execute the SQL script. Make sure you have a database backup.`)) {
-                return;
-            }
-            
-            const btn = $(`.btn-apply-migration[data-filename="${filename}"]`);
-            const originalHtml = btn.html();
-            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Applying...');
-            
-            $.ajax({
-                url: '/api/admin/migrations.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ filename: filename }),
-                dataType: 'json',
-                timeout: 60000, // 60 second timeout for migrations
-                success: function(response) {
-                    btn.prop('disabled', false).html(originalHtml);
-                    if (response.success) {
-                        alert(`Migration applied successfully!\n\nExecution time: ${response.execution_time}s\nRows affected: ${response.rows_affected || 'N/A'}`);
-                        loadMigrations(); // Refresh the list
-                    } else {
-                        alert('Failed to apply migration: ' + (response.error || 'Unknown error'));
-                    }
-                },
-                error: function(xhr, status, error) {
-                    btn.prop('disabled', false).html(originalHtml);
-                    let errorMsg = 'Unknown error';
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        errorMsg = xhr.responseJSON.error;
-                    } else if (status === 'timeout') {
-                        errorMsg = 'Migration timed out (took longer than 60 seconds)';
-                    } else {
-                        errorMsg = error || xhr.statusText;
-                    }
-                    alert('Failed to apply migration:\n\n' + errorMsg);
-                    loadMigrations(); // Refresh to show updated status
-                }
-            });
-        };
-        
-        window.formatFileSize = function(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        };
     });
 })();
 </script>
