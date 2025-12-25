@@ -63,6 +63,11 @@ ob_start();
                     <i class="fas fa-cog me-1"></i>Settings
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="migrations-tab" data-bs-toggle="tab" data-bs-target="#migrations" type="button">
+                    <i class="fas fa-database me-1"></i>Migrations
+                </button>
+            </li>
         </ul>
         
         <div class="tab-content" id="adminTabContent">
@@ -370,6 +375,125 @@ ob_start();
                             </div>
                             </form>
                         </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0"><i class="fas fa-bug me-2"></i>Email Debug & Logs</h6>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="emailDebugToggle" role="switch">
+                                    <label class="form-check-label" for="emailDebugToggle">
+                                        Enable Debug Logging
+                                    </label>
+                                </div>
+                            </div>
+                            <p class="text-muted">View email sending logs and debug information. Enable debug logging to capture detailed information about email sending attempts.</p>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Email Logs</h6>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-secondary" id="btnRefreshEmailLogs">
+                                            <i class="fas fa-sync"></i> Refresh
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" id="btnClearEmailLogs">
+                                            <i class="fas fa-trash"></i> Clear Logs
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Status</label>
+                                            <select class="form-select form-select-sm" id="emailLogStatusFilter">
+                                                <option value="">All Statuses</option>
+                                                <option value="pending">Pending</option>
+                                                <option value="sent">Sent</option>
+                                                <option value="failed">Failed</option>
+                                                <option value="bounced">Bounced</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Provider</label>
+                                            <select class="form-select form-select-sm" id="emailLogProviderFilter">
+                                                <option value="">All Providers</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Search</label>
+                                            <input type="text" class="form-control form-control-sm" id="emailLogSearch" placeholder="Recipient, subject, error...">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Sort</label>
+                                            <select class="form-select form-select-sm" id="emailLogSort">
+                                                <option value="created_at DESC">Newest First</option>
+                                                <option value="created_at ASC">Oldest First</option>
+                                                <option value="recipient ASC">Recipient A-Z</option>
+                                                <option value="status ASC">Status</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped table-hover">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th>Time</th>
+                                                    <th>Recipient</th>
+                                                    <th>Subject</th>
+                                                    <th>Provider</th>
+                                                    <th>Status</th>
+                                                    <th>Error</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="emailLogsTableBody">
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">Loading logs...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <small class="text-muted" id="emailLogCount">0 logs</small>
+                                        <nav>
+                                            <ul class="pagination pagination-sm mb-0" id="emailLogPagination">
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Migrations Tab -->
+            <div class="tab-pane fade" id="migrations" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnRefreshMigrations">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Migration Management:</strong> This panel allows you to view and apply SQL migration scripts from the <code>/database/migrations</code> directory. 
+                            Only migrations that have not been applied will show an "Apply" button. Applied migrations are tracked in the database.
+                        </div>
+                        
+                        <div id="migrationsTableContainer">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading migrations...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -660,6 +784,16 @@ ob_start();
             $('#btnClearLogs').on('click', function() { clearLogs(); });
             $('#mapProviderSelect').on('change', function() { updateMapPreview(); });
             $('#emailProviderSelect').on('change', function() { updateEmailProviderFields(); });
+            $('#emailDebugToggle').on('change', function() { saveEmailDebugSetting(); });
+            $('#btnRefreshEmailLogs').on('click', function() { loadEmailLogs(); });
+            $('#btnClearEmailLogs').on('click', function() { clearEmailLogs(); });
+            $('#emailLogStatusFilter, #emailLogProviderFilter, #emailLogSort').on('change', function() { loadEmailLogs(); });
+            $('#emailLogSearch').on('keyup', debounce(function() { loadEmailLogs(); }, 500));
+            $('#btnRefreshMigrations').on('click', function() { loadMigrations(); });
+            $(document).on('click', '.btn-apply-migration', function() {
+                const filename = $(this).data('filename');
+                applyMigration(filename);
+            });
             $('#userSearch').on('keyup', function() { loadUsers(); });
             $('#deviceSearch').on('keyup', function() { loadDevices(); });
             
@@ -717,6 +851,8 @@ ob_start();
                     loadLogs();
                 } else if (target === '#email') {
                     loadEmailSettings();
+                } else if (target === '#migrations') {
+                    loadMigrations();
                 } else if (target === '#settings') {
                     setTimeout(function() {
                         if (!mapPreview && typeof L !== 'undefined') {
@@ -1766,6 +1902,461 @@ ob_start();
         
         // Initialize email provider fields on page load
         updateEmailProviderFields();
+        
+        // Email Log Viewer Functions
+        let currentEmailLogPage = 1;
+        
+        window.loadEmailLogs = function(page = 1) {
+            currentEmailLogPage = page;
+            const status = $('#emailLogStatusFilter').val();
+            const provider = $('#emailLogProviderFilter').val();
+            const search = $('#emailLogSearch').val();
+            const sort = $('#emailLogSort').val();
+            
+            $.ajax({
+                url: '/api/admin/email_logs.php',
+                method: 'GET',
+                data: {
+                    status: status || undefined,
+                    provider: provider || undefined,
+                    search: search || undefined,
+                    sort: sort,
+                    limit: 50,
+                    page: page
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        displayEmailLogs(response.logs);
+                        updateEmailLogPagination(response.page, response.pages, response.total);
+                        $('#emailLogCount').text(`${response.total} log${response.total !== 1 ? 's' : ''}`);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load email logs:', xhr);
+                    $('#emailLogsTableBody').html('<tr><td colspan="7" class="text-center text-danger">Failed to load logs</td></tr>');
+                }
+            });
+        };
+        
+        window.displayEmailLogs = function(logs) {
+            const tbody = $('#emailLogsTableBody');
+            tbody.empty();
+            
+            if (logs.length === 0) {
+                tbody.append('<tr><td colspan="7" class="text-center text-muted">No logs found</td></tr>');
+                return;
+            }
+            
+            logs.forEach(log => {
+                const statusBadge = getEmailLogStatusBadge(log.status);
+                const time = formatDate(log.created_at);
+                const error = log.error_message ? escapeHtml(log.error_message.substring(0, 100)) + (log.error_message.length > 100 ? '...' : '') : '-';
+                const subject = log.subject ? escapeHtml(log.subject.substring(0, 50)) + (log.subject.length > 50 ? '...' : '') : '-';
+                const provider = log.provider ? escapeHtml(log.provider) : '-';
+                
+                const row = `
+                    <tr>
+                        <td><small>${time}</small></td>
+                        <td>${escapeHtml(log.recipient)}</td>
+                        <td>${subject}</td>
+                        <td>${provider}</td>
+                        <td>${statusBadge}</td>
+                        <td><small class="text-muted">${error}</small></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" onclick="viewEmailLogDetails(${log.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        };
+        
+        window.getEmailLogStatusBadge = function(status) {
+            const badges = {
+                'pending': '<span class="badge bg-warning">Pending</span>',
+                'sent': '<span class="badge bg-success">Sent</span>',
+                'failed': '<span class="badge bg-danger">Failed</span>',
+                'bounced': '<span class="badge bg-secondary">Bounced</span>'
+            };
+            return badges[status] || '<span class="badge bg-secondary">' + escapeHtml(status) + '</span>';
+        };
+        
+        window.updateEmailLogPagination = function(currentPage, totalPages, total) {
+            const pagination = $('#emailLogPagination');
+            pagination.empty();
+            
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // Previous button
+            pagination.append(`
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadEmailLogs(${currentPage - 1}); return false;">Previous</a>
+                </li>
+            `);
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadEmailLogs(1); return false;">1</a></li>`);
+                if (startPage > 2) {
+                    pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                pagination.append(`
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadEmailLogs(${i}); return false;">${i}</a>
+                    </li>
+                `);
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                }
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="loadEmailLogs(${totalPages}); return false;">${totalPages}</a></li>`);
+            }
+            
+            // Next button
+            pagination.append(`
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadEmailLogs(${currentPage + 1}); return false;">Next</a>
+                </li>
+            `);
+        };
+        
+        window.viewEmailLogDetails = function(logId) {
+            $.ajax({
+                url: '/api/admin/email_logs.php',
+                method: 'GET',
+                data: { log_id: logId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success && response.logs.length > 0) {
+                        const log = response.logs[0];
+                        showEmailLogModal(log);
+                    } else {
+                        alert('Log not found');
+                    }
+                },
+                error: function(xhr) {
+                    alert('Failed to load log details');
+                }
+            });
+        };
+        
+        window.showEmailLogModal = function(log) {
+            const modal = `
+                <div class="modal fade" id="emailLogModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Email Log Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <table class="table table-sm">
+                                    <tr><th>Time:</th><td>${formatDate(log.created_at)}</td></tr>
+                                    <tr><th>Recipient:</th><td>${escapeHtml(log.recipient)}</td></tr>
+                                    <tr><th>Subject:</th><td>${escapeHtml(log.subject || '-')}</td></tr>
+                                    <tr><th>Provider:</th><td>${escapeHtml(log.provider || '-')}</td></tr>
+                                    <tr><th>Status:</th><td>${getEmailLogStatusBadge(log.status)}</td></tr>
+                                    ${log.error_message ? `<tr><th>Error:</th><td><pre class="text-danger">${escapeHtml(log.error_message)}</pre></td></tr>` : ''}
+                                    ${log.response_data ? `<tr><th>Response:</th><td><pre>${escapeHtml(JSON.stringify(log.response_data, null, 2))}</pre></td></tr>` : ''}
+                                    ${log.debug_data ? `<tr><th>Debug Data:</th><td><pre>${escapeHtml(JSON.stringify(log.debug_data, null, 2))}</pre></td></tr>` : ''}
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('#emailLogModal').remove();
+            $('body').append(modal);
+            new bootstrap.Modal(document.getElementById('emailLogModal')).show();
+        };
+        
+        window.clearEmailLogs = function() {
+            if (!confirm('Are you sure you want to clear all email logs? This cannot be undone.')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/api/admin/email_logs.php',
+                method: 'DELETE',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert('Email logs cleared successfully');
+                        loadEmailLogs(1);
+                    } else {
+                        alert('Failed to clear logs');
+                    }
+                },
+                error: function(xhr) {
+                    alert('Failed to clear logs: ' + (xhr.responseJSON?.error || 'Unknown error'));
+                }
+            });
+        };
+        
+        window.saveEmailDebugSetting = function() {
+            const debugEnabled = $('#emailDebugToggle').is(':checked');
+            $.ajax({
+                url: '/api/admin/settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ email_debug: debugEnabled ? '1' : '0' }),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        console.log('Email debug setting saved');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to save email debug setting:', xhr);
+                }
+            });
+        };
+        
+        window.debounce = function(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        };
+        
+        window.loadEmailDebugSetting = function() {
+            $.ajax({
+                url: '/api/admin/settings.php',
+                method: 'GET',
+                dataType: 'json',
+                success: function(settings) {
+                    $('#emailDebugToggle').prop('checked', settings.email_debug === '1' || settings.email_debug === 1);
+                }
+            });
+        };
+        
+        window.loadEmailLogProviders = function() {
+            $.ajax({
+                url: '/api/admin/email_logs.php',
+                method: 'GET',
+                data: { limit: 1000 },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        const providers = [...new Set(response.logs.map(log => log.provider).filter(p => p))].sort();
+                        const select = $('#emailLogProviderFilter');
+                        select.find('option:not(:first)').remove();
+                        providers.forEach(provider => {
+                            select.append(`<option value="${escapeHtml(provider)}">${escapeHtml(provider)}</option>`);
+                        });
+                    }
+                }
+            });
+        };
+        
+        // Load email logs when email tab is shown
+        $(document).on('shown.bs.tab', '#email-tab', function() {
+            loadEmailLogs();
+            loadEmailDebugSetting();
+            loadEmailLogProviders();
+        });
+        
+        // Migration Management Functions
+        window.loadMigrations = function() {
+            const container = $('#migrationsTableContainer');
+            container.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading migrations...</p></div>');
+            
+            $.ajax({
+                url: '/api/admin/migrations.php',
+                method: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        displayMigrations(response.migrations, response.migrations_table_exists);
+                    } else {
+                        container.html('<div class="alert alert-danger">Failed to load migrations</div>');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load migrations:', xhr);
+                    let errorMsg = 'Failed to load migrations';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+                    container.html(`<div class="alert alert-danger">${escapeHtml(errorMsg)}</div>`);
+                }
+            });
+        };
+        
+        window.displayMigrations = function(migrations, tableExists) {
+            const container = $('#migrationsTableContainer');
+            
+            if (!tableExists) {
+                container.html(`
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Migrations table not found.</strong> 
+                        Please run the <code>create_migrations_table.sql</code> migration first to enable migration tracking.
+                    </div>
+                `);
+                return;
+            }
+            
+            if (migrations.length === 0) {
+                container.html('<div class="alert alert-info">No migration files found in /database/migrations</div>');
+                return;
+            }
+            
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>Modified</th>
+                                <th>Status</th>
+                                <th>Applied At</th>
+                                <th>Execution Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            migrations.forEach(migration => {
+                const size = formatFileSize(migration.size);
+                const modified = formatDate(new Date(migration.modified * 1000).toISOString());
+                const appliedAt = migration.applied_at ? formatDate(migration.applied_at) : '-';
+                const execTime = migration.execution_time ? migration.execution_time + 's' : '-';
+                
+                let statusBadge = '';
+                if (migration.applied) {
+                    if (migration.status === 'success') {
+                        statusBadge = '<span class="badge bg-success">Applied</span>';
+                    } else if (migration.status === 'failed') {
+                        statusBadge = '<span class="badge bg-danger">Failed</span>';
+                    } else {
+                        statusBadge = '<span class="badge bg-warning">Partial</span>';
+                    }
+                } else {
+                    statusBadge = '<span class="badge bg-secondary">Not Applied</span>';
+                }
+                
+                let actionButton = '';
+                if (!migration.applied || migration.status !== 'success') {
+                    actionButton = `
+                        <button class="btn btn-sm btn-primary btn-apply-migration" 
+                                data-filename="${escapeHtml(migration.filename)}"
+                                title="Apply this migration">
+                            <i class="fas fa-play me-1"></i>Apply
+                        </button>
+                    `;
+                } else {
+                    actionButton = '<span class="text-muted">-</span>';
+                }
+                
+                let errorInfo = '';
+                if (migration.error_message) {
+                    errorInfo = `
+                        <tr class="table-danger">
+                            <td colspan="7">
+                                <small class="text-danger">
+                                    <strong>Error:</strong> ${escapeHtml(migration.error_message)}
+                                </small>
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                html += `
+                    <tr ${migration.status === 'failed' ? 'class="table-danger"' : ''}>
+                        <td><code>${escapeHtml(migration.filename)}</code></td>
+                        <td>${size}</td>
+                        <td><small>${modified}</small></td>
+                        <td>${statusBadge}</td>
+                        <td><small>${appliedAt}</small></td>
+                        <td><small>${execTime}</small></td>
+                        <td>${actionButton}</td>
+                    </tr>
+                    ${errorInfo}
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.html(html);
+        };
+        
+        window.applyMigration = function(filename) {
+            if (!confirm(`Are you sure you want to apply the migration "${filename}"?\n\nThis will execute the SQL script. Make sure you have a database backup.`)) {
+                return;
+            }
+            
+            const btn = $(`.btn-apply-migration[data-filename="${filename}"]`);
+            const originalHtml = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Applying...');
+            
+            $.ajax({
+                url: '/api/admin/migrations.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ filename: filename }),
+                dataType: 'json',
+                timeout: 60000, // 60 second timeout for migrations
+                success: function(response) {
+                    btn.prop('disabled', false).html(originalHtml);
+                    if (response.success) {
+                        alert(`Migration applied successfully!\n\nExecution time: ${response.execution_time}s\nRows affected: ${response.rows_affected || 'N/A'}`);
+                        loadMigrations(); // Refresh the list
+                    } else {
+                        alert('Failed to apply migration: ' + (response.error || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    btn.prop('disabled', false).html(originalHtml);
+                    let errorMsg = 'Unknown error';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (status === 'timeout') {
+                        errorMsg = 'Migration timed out (took longer than 60 seconds)';
+                    } else {
+                        errorMsg = error || xhr.statusText;
+                    }
+                    alert('Failed to apply migration:\n\n' + errorMsg);
+                    loadMigrations(); // Refresh to show updated status
+                }
+            });
+        };
+        
+        window.formatFileSize = function(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        };
     });
 })();
 </script>
