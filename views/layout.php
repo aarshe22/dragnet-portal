@@ -30,12 +30,29 @@
     <!-- Dragnet 1950's Theme -->
     <link rel="stylesheet" href="/public/css/dragnet-theme.css">
     
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="mobile-web-app-capable" content="yes">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/public/manifest.json">
+    
+    <!-- iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DragNet">
+    <link rel="apple-touch-icon" href="/public/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/public/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/public/icons/icon-512.png">
+    
+    <!-- Android/Chrome PWA Support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="DragNet">
+    
+    <!-- Windows PWA Support -->
+    <meta name="msapplication-TileColor" content="#1a1a1a">
+    <meta name="msapplication-TileImage" content="/public/icons/icon-192.png">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
 </head>
 <body>
     <?php
@@ -124,6 +141,13 @@
                 </ul>
                 
                 <ul class="navbar-nav">
+                    <!-- PWA Install Button -->
+                    <li class="nav-item" id="pwaInstallContainer" style="display: none;">
+                        <button class="btn btn-outline-light btn-sm ms-2" id="pwaInstallButton" title="Install App">
+                            <i class="fas fa-download me-1"></i>Install App
+                        </button>
+                    </li>
+                    
                     <?php if ($isAdmin): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle <?= get_current_page() === 'admin' ? 'active' : '' ?>" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -182,6 +206,63 @@
         <?= $content ?? '' ?>
     </main>
     
+    <!-- PWA & Push Notification Prompt Modal -->
+    <?php if ($isAuthenticated): ?>
+    <div class="modal fade" id="pwaPromptModal" tabindex="-1" aria-labelledby="pwaPromptModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%); border-bottom: 2px solid var(--dragnet-badge-gold);">
+                    <h5 class="modal-title" id="pwaPromptModalLabel" style="font-family: var(--dragnet-typewriter); letter-spacing: 1px; text-transform: uppercase; color: var(--dragnet-white);">
+                        <i class="fas fa-bell me-2" style="color: var(--dragnet-badge-gold);"></i>Stay Connected
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="dismissPwaPrompt"></button>
+                </div>
+                <div class="modal-body" style="background: var(--dragnet-white); padding: 2rem;">
+                    <div id="installPromptSection" style="display: none;">
+                        <div class="d-flex align-items-start mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-mobile-alt fa-2x" style="color: var(--dragnet-badge-gold);"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary); margin-bottom: 0.5rem;">Install Dragnet Intelematics</h6>
+                                <p style="color: var(--dragnet-text-secondary); margin-bottom: 0;">Get quick access from your home screen. Works offline and loads faster.</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 mb-3" id="installAppButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-download me-2"></i>Install App
+                        </button>
+                    </div>
+                    
+                    <div id="pushPromptSection" style="display: none;">
+                        <div class="d-flex align-items-start mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-bell fa-2x" style="color: var(--dragnet-badge-gold);"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary); margin-bottom: 0.5rem;">Enable Push Notifications</h6>
+                                <p style="color: var(--dragnet-text-secondary); margin-bottom: 0;">Get instant alerts for critical events, device status changes, and important updates.</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-success w-100 mb-3" id="enablePushButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-bell me-2"></i>Enable Notifications
+                        </button>
+                    </div>
+                    
+                    <div id="noPromptsMessage" style="display: none; text-align: center; padding: 1rem;">
+                        <i class="fas fa-check-circle fa-2x mb-2" style="color: var(--dragnet-blue);"></i>
+                        <p style="color: var(--dragnet-text-secondary); margin: 0;">You're all set! All features are enabled.</p>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: var(--dragnet-cream); border-top: 2px solid var(--dragnet-gray);">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="maybeLaterButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    
     <!-- Footer -->
     <?php if ($shouldShowNav): ?>
     <footer class="bg-light mt-5 py-3">
@@ -219,14 +300,262 @@
         <?php endforeach; ?>
     <?php endif; ?>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration & PWA Install -->
     <script>
+        let deferredPrompt;
+        let installButton;
+        let installContainer;
+        
+        // Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed'));
+                    .then(reg => {
+                        console.log('Service Worker registered');
+                        // Check for updates
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available
+                                    if (confirm('A new version is available. Reload to update?')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.log('Service Worker registration failed:', err));
             });
+        }
+        
+        // PWA Install Prompt Handler
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show install button
+            installContainer = document.getElementById('pwaInstallContainer');
+            installButton = document.getElementById('pwaInstallButton');
+            if (installContainer && installButton) {
+                installContainer.style.display = 'block';
+                
+                installButton.addEventListener('click', async () => {
+                    if (!deferredPrompt) {
+                        // Fallback for browsers that don't support beforeinstallprompt
+                        showInstallInstructions();
+                        return;
+                    }
+                    
+                    // Show the install prompt
+                    deferredPrompt.prompt();
+                    
+                    // Wait for the user to respond to the prompt
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to install prompt: ${outcome}`);
+                    
+                    // Clear the deferredPrompt
+                    deferredPrompt = null;
+                    
+                    // Hide the install button
+                    if (installContainer) {
+                        installContainer.style.display = 'none';
+                    }
+                });
+            }
+        });
+        
+        // Hide install button if app is already installed
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            if (installContainer) {
+                installContainer.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+        
+        // Check if app is already installed
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true ||
+            document.referrer.includes('android-app://');
+        
+        if (isInstalled) {
+            // App is already installed
+            if (installContainer) {
+                installContainer.style.display = 'none';
+            }
+        }
+        
+        // PWA & Push Notification Prompt System
+        (function() {
+            // Check if user has dismissed prompts
+            const pwaPromptDismissed = localStorage.getItem('pwaPromptDismissed');
+            const pushPromptDismissed = localStorage.getItem('pushPromptDismissed');
+            const promptShownToday = localStorage.getItem('promptShownDate') === new Date().toDateString();
+            
+            // Don't show if dismissed today
+            if (pwaPromptDismissed && pushPromptDismissed && promptShownToday) {
+                return;
+            }
+            
+            // Wait a bit after page load before showing prompt
+            setTimeout(() => {
+                const modal = document.getElementById('pwaPromptModal');
+                if (!modal) return;
+                
+                const installSection = document.getElementById('installPromptSection');
+                const pushSection = document.getElementById('pushPromptSection');
+                const noPromptsMessage = document.getElementById('noPromptsMessage');
+                const installButton = document.getElementById('installAppButton');
+                const enablePushButton = document.getElementById('enablePushButton');
+                const dismissButton = document.getElementById('dismissPwaPrompt');
+                const maybeLaterButton = document.getElementById('maybeLaterButton');
+                
+                let showInstall = false;
+                let showPush = false;
+                
+                // Check if install prompt should be shown
+                if (!isInstalled && deferredPrompt && !pwaPromptDismissed) {
+                    showInstall = true;
+                }
+                
+                // Check if push notification prompt should be shown
+                if ('Notification' in window && Notification.permission === 'default' && !pushPromptDismissed) {
+                    showPush = true;
+                }
+                
+                // Show modal if there are prompts to show
+                if (showInstall || showPush) {
+                    if (showInstall) {
+                        installSection.style.display = 'block';
+                        installButton.addEventListener('click', async () => {
+                            if (deferredPrompt) {
+                                deferredPrompt.prompt();
+                                const { outcome } = await deferredPrompt.userChoice;
+                                console.log(`Install prompt: ${outcome}`);
+                                deferredPrompt = null;
+                                
+                                if (outcome === 'accepted') {
+                                    installSection.style.display = 'none';
+                                    checkIfAllDone();
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (showPush) {
+                        pushSection.style.display = 'block';
+                        enablePushButton.addEventListener('click', async () => {
+                            try {
+                                const permission = await Notification.requestPermission();
+                                if (permission === 'granted') {
+                                    // Subscribe to push notifications
+                                    if (typeof DragNet !== 'undefined' && DragNet.subscribePush) {
+                                        // Get VAPID key from config if available
+                                        try {
+                                            const response = await fetch('/api/push/vapid-key.php');
+                                            const data = await response.json();
+                                            if (data.publicKey) {
+                                                DragNet.config.vapidPublicKey = data.publicKey;
+                                            }
+                                        } catch (e) {
+                                            console.log('Could not fetch VAPID key, using default');
+                                        }
+                                        
+                                        DragNet.subscribePush().then(() => {
+                                            pushSection.style.display = 'none';
+                                            checkIfAllDone();
+                                        }).catch(err => {
+                                            console.error('Push subscription error:', err);
+                                            alert('Unable to complete push notification setup. Please try again later.');
+                                        });
+                                    } else {
+                                        pushSection.style.display = 'none';
+                                        checkIfAllDone();
+                                    }
+                                } else {
+                                    alert('Notifications were blocked. You can enable them later in your browser settings.');
+                                }
+                            } catch (err) {
+                                console.error('Error requesting notification permission:', err);
+                                alert('Unable to enable notifications. Please check your browser settings.');
+                            }
+                        });
+                    }
+                    
+                    // Show modal
+                    const bsModal = new bootstrap.Modal(modal);
+                    bsModal.show();
+                    
+                    // Handle dismiss buttons
+                    dismissButton?.addEventListener('click', () => {
+                        if (showInstall && !isInstalled) {
+                            localStorage.setItem('pwaPromptDismissed', 'true');
+                        }
+                        if (showPush && Notification.permission === 'default') {
+                            localStorage.setItem('pushPromptDismissed', 'true');
+                        }
+                        localStorage.setItem('promptShownDate', new Date().toDateString());
+                    });
+                    
+                    maybeLaterButton?.addEventListener('click', () => {
+                        if (showInstall && !isInstalled) {
+                            localStorage.setItem('pwaPromptDismissed', 'true');
+                        }
+                        if (showPush && Notification.permission === 'default') {
+                            localStorage.setItem('pushPromptDismissed', 'true');
+                        }
+                        localStorage.setItem('promptShownDate', new Date().toDateString());
+                    });
+                    
+                    function checkIfAllDone() {
+                        const installDone = isInstalled || !showInstall || installSection.style.display === 'none';
+                        const pushDone = Notification.permission !== 'default' || pushSection.style.display === 'none';
+                        
+                        if (installDone && pushDone) {
+                            installSection.style.display = 'none';
+                            pushSection.style.display = 'none';
+                            noPromptsMessage.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                bsModal.hide();
+                            }, 2000);
+                        }
+                    }
+                }
+            }, 2000); // Show after 2 seconds
+        })();
+        
+        // Show install instructions for browsers that don't support beforeinstallprompt
+        function showInstallInstructions() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            const isChrome = /Chrome/.test(navigator.userAgent);
+            const isEdge = /Edg/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !isChrome;
+            
+            let instructions = '';
+            
+            if (isIOS && isSafari) {
+                instructions = 'To install this app on your iOS device:\n\n' +
+                    '1. Tap the Share button (square with arrow)\n' +
+                    '2. Scroll down and tap "Add to Home Screen"\n' +
+                    '3. Tap "Add" to confirm';
+            } else if (isAndroid && isChrome) {
+                instructions = 'To install this app on your Android device:\n\n' +
+                    '1. Tap the menu (three dots) in the browser\n' +
+                    '2. Tap "Install app" or "Add to Home screen"\n' +
+                    '3. Tap "Install" to confirm';
+            } else if (isChrome || isEdge) {
+                instructions = 'To install this app:\n\n' +
+                    '1. Click the install icon in the address bar\n' +
+                    '2. Or go to Settings > Apps > Install this site as an app';
+            } else {
+                instructions = 'To install this app, look for an install option in your browser\'s menu or address bar.';
+            }
+            
+            alert(instructions);
         }
         
         // Make toggleTheme available globally

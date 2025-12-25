@@ -124,8 +124,15 @@ if (strpos($path, '/api/') === 0) {
 }
 
 // Handle PWA files
-if ($path === '/manifest.json') {
-    require __DIR__ . '/api/pwa/manifest.php';
+if ($path === '/manifest.json' || $path === '/public/manifest.json') {
+    header('Content-Type: application/manifest+json');
+    readfile(__DIR__ . '/public/manifest.json');
+    exit;
+}
+
+if ($path === '/browserconfig.xml') {
+    header('Content-Type: application/xml');
+    readfile(__DIR__ . '/browserconfig.xml');
     exit;
 }
 

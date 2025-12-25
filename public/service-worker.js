@@ -1,26 +1,48 @@
 const CACHE_NAME = 'dragnet-v1';
 const OFFLINE_URL = '/public/offline.html';
+const RUNTIME_CACHE = 'dragnet-runtime-v1';
+
+// Assets to cache on install
+const STATIC_CACHE_URLS = [
+    '/',
+    '/public/offline.html',
+    '/public/css/app.css',
+    '/public/css/dragnet-theme.css',
+    '/public/js/app.js',
+    '/public/icons/icon-192.png',
+    '/public/icons/icon-512.png',
+    '/public/manifest.json'
+];
 
 self.addEventListener('install', (event) => {
+    console.log('Service Worker: Installing...');
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll([
-                '/',
-                '/public/offline.html',
-                '/public/css/app.css',
-                '/public/js/app.js',
-            ]);
+            console.log('Service Worker: Caching static assets');
+            return cache.addAll(STATIC_CACHE_URLS.map(url => {
+                try {
+                    return new Request(url, { cache: 'reload' });
+                } catch (e) {
+                    return url;
+                }
+            })).catch(err => {
+                console.log('Service Worker: Some assets failed to cache', err);
+                // Continue even if some assets fail
+                return Promise.resolve();
+            });
         })
     );
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+    console.log('Service Worker: Activating...');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
+                    if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+                        console.log('Service Worker: Deleting old cache', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
@@ -28,6 +50,7 @@ self.addEventListener('activate', (event) => {
         })
     );
     self.clients.claim();
+    console.log('Service Worker: Activated');
 });
 
 self.addEventListener('fetch', (event) => {

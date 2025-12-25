@@ -25,17 +25,36 @@ const DragNet = {
     // Subscribe to push notifications
     subscribePush: function() {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            alert('Push notifications are not supported in this browser');
-            return;
+            console.warn('Push notifications are not supported in this browser');
+            return Promise.reject('Push notifications not supported');
         }
         
-        navigator.serviceWorker.ready.then(function(registration) {
-            return registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(DragNet.config.vapidPublicKey)
+        // Get VAPID key if not already set
+        const getVapidKey = () => {
+            if (DragNet.config.vapidPublicKey) {
+                return Promise.resolve(DragNet.config.vapidPublicKey);
+            }
+            
+            return fetch('/api/push/vapid-key.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.publicKey) {
+                        DragNet.config.vapidPublicKey = data.publicKey;
+                        return data.publicKey;
+                    }
+                    throw new Error('VAPID key not available');
+                });
+        };
+        
+        return getVapidKey().then(vapidKey => {
+            return navigator.serviceWorker.ready.then(function(registration) {
+                return registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                });
             });
         }).then(function(subscription) {
-            $.ajax({
+            return $.ajax({
                 url: '/api/push/subscribe.php',
                 method: 'POST',
                 contentType: 'application/json',
@@ -46,13 +65,14 @@ const DragNet = {
                         auth: arrayBufferToBase64(subscription.getKey('auth'))
                     },
                     platform: getPlatform()
-                }),
-                success: function() {
-                    console.log('Subscribed to push notifications');
-                }
+                })
+            }).then(function() {
+                console.log('Subscribed to push notifications');
+                return { success: true };
             });
         }).catch(function(err) {
             console.error('Push subscription failed:', err);
+            throw err;
         });
     },
     
