@@ -54,6 +54,11 @@ ob_start();
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="simulator-tab" data-bs-toggle="tab" data-bs-target="#simulator" type="button">
+                    <i class="fas fa-flask me-1"></i>Device Simulator
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button">
                     <i class="fas fa-envelope me-1"></i>Email Integration
                 </button>
@@ -459,6 +464,102 @@ ob_start();
                                         </nav>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Device Simulator Tab -->
+            <div class="tab-pane fade" id="simulator" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Teltonika Telemetry Simulator</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Generate and stream realistic test telemetry data like a real Teltonika device. Perfect for testing without physical hardware.</p>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Select Device</label>
+                                <select class="form-select" id="simulatorDeviceId">
+                                    <option value="">Loading devices...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Update Interval (seconds)</label>
+                                <input type="number" class="form-control" id="simulatorInterval" value="30" min="5" max="300">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Route Type</label>
+                                <select class="form-select" id="simulatorRoute">
+                                    <option value="random">Random Movement</option>
+                                    <option value="circle">Circular Route</option>
+                                    <option value="line">Straight Line</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Speed (km/h)</label>
+                                <input type="number" class="form-control" id="simulatorSpeed" placeholder="Auto (random)" min="0" max="200">
+                                <small class="text-muted">Leave empty for random speed</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Movement State</label>
+                                <select class="form-select" id="simulatorMoving">
+                                    <option value="">Auto (random)</option>
+                                    <option value="1">Moving</option>
+                                    <option value="0">Stopped</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Iterations</label>
+                                <input type="number" class="form-control" id="simulatorIterations" placeholder="Unlimited" min="1">
+                                <small class="text-muted">Leave empty for continuous streaming</small>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> The simulator will generate realistic GPS coordinates, speed, heading, IO elements, and device status. 
+                            Data will be sent to the same endpoint as real devices and will appear in the Live Map and Telematics Logs.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" id="simulatorSendSingle" onclick="simulatorSendSingle()">
+                                <i class="fas fa-paper-plane me-1"></i>Send Single Packet
+                            </button>
+                            <button class="btn btn-success" id="simulatorStartStream" onclick="simulatorStartStream()">
+                                <i class="fas fa-play me-1"></i>Start Streaming
+                            </button>
+                            <button class="btn btn-danger" id="simulatorStopStream" onclick="simulatorStopStream()" style="display: none;">
+                                <i class="fas fa-stop me-1"></i>Stop Streaming
+                            </button>
+                        </div>
+                        
+                        <div id="simulatorStatus" class="mt-3"></div>
+                        
+                        <div class="mt-4">
+                            <h6>Simulation Status</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Packets Sent</th>
+                                            <th>Packets Failed</th>
+                                            <th>Last Location</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="simulatorStatusTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No simulation running</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -2135,6 +2236,170 @@ ob_start();
             loadEmailLogs();
             loadEmailDebugSetting();
             loadEmailLogProviders();
+        });
+        
+        // Simulator functions
+        let simulatorStreamInterval = null;
+        let simulatorStreaming = false;
+        
+        window.loadSimulatorDevices = function() {
+            $.ajax({
+                url: '/api/admin/simulator.php?action=devices',
+                method: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    const select = $('#simulatorDeviceId');
+                    select.empty().append('<option value="">Select Device</option>');
+                    if (response.devices) {
+                        response.devices.forEach(device => {
+                            select.append(`<option value="${device.id}">${escapeHtml(device.name || device.device_uid)} (${escapeHtml(device.imei || 'N/A')})</option>`);
+                        });
+                    }
+                }
+            });
+        };
+        
+        window.simulatorSendSingle = function() {
+            const deviceId = $('#simulatorDeviceId').val();
+            if (!deviceId) {
+                alert('Please select a device');
+                return;
+            }
+            
+            const config = {
+                device_id: deviceId,
+                speed: $('#simulatorSpeed').val() || null,
+                moving: $('#simulatorMoving').val() !== '' ? ($('#simulatorMoving').val() === '1') : null,
+                route: $('#simulatorRoute').val(),
+                interval: parseInt($('#simulatorInterval').val()) || 30
+            };
+            
+            $('#simulatorSendSingle').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Sending...');
+            
+            $.ajax({
+                url: '/api/admin/simulator.php?action=send',
+                method: 'POST',
+                data: config,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        $('#simulatorStatus').html(`<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Telemetry packet sent successfully!</div>`);
+                        updateSimulatorStatus('success', response.telemetry);
+                    } else {
+                        $('#simulatorStatus').html(`<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(response.error || 'Failed to send telemetry')}</div>`);
+                    }
+                    $('#simulatorSendSingle').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i>Send Single Packet');
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Failed to send telemetry';
+                    $('#simulatorStatus').html(`<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(error)}</div>`);
+                    $('#simulatorSendSingle').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i>Send Single Packet');
+                }
+            });
+        };
+        
+        window.simulatorStartStream = function() {
+            const deviceId = $('#simulatorDeviceId').val();
+            if (!deviceId) {
+                alert('Please select a device');
+                return;
+            }
+            
+            if (simulatorStreaming) {
+                return;
+            }
+            
+            const config = {
+                device_id: deviceId,
+                speed: $('#simulatorSpeed').val() || null,
+                moving: $('#simulatorMoving').val() !== '' ? ($('#simulatorMoving').val() === '1') : null,
+                route: $('#simulatorRoute').val(),
+                interval: parseInt($('#simulatorInterval').val()) || 30,
+                iterations: $('#simulatorIterations').val() || null
+            };
+            
+            simulatorStreaming = true;
+            $('#simulatorStartStream').hide();
+            $('#simulatorStopStream').show();
+            $('#simulatorSendSingle').prop('disabled', true);
+            $('#simulatorStatus').html(`<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Starting stream...</div>`);
+            
+            // Send packets at interval
+            let packetCount = 0;
+            let failedCount = 0;
+            const maxIterations = config.iterations ? parseInt(config.iterations) : null;
+            
+            const sendPacket = function() {
+                if (!simulatorStreaming) {
+                    return;
+                }
+                
+                if (maxIterations && packetCount >= maxIterations) {
+                    simulatorStopStream();
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/api/admin/simulator.php?action=send',
+                    method: 'POST',
+                    data: config,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            packetCount++;
+                            updateSimulatorStatus('streaming', response.telemetry, packetCount, failedCount);
+                        } else {
+                            failedCount++;
+                            updateSimulatorStatus('streaming', null, packetCount, failedCount);
+                        }
+                    },
+                    error: function() {
+                        failedCount++;
+                        updateSimulatorStatus('streaming', null, packetCount, failedCount);
+                    }
+                });
+            };
+            
+            // Send first packet immediately
+            sendPacket();
+            
+            // Then send at interval
+            simulatorStreamInterval = setInterval(sendPacket, config.interval * 1000);
+        };
+        
+        window.simulatorStopStream = function() {
+            simulatorStreaming = false;
+            if (simulatorStreamInterval) {
+                clearInterval(simulatorStreamInterval);
+                simulatorStreamInterval = null;
+            }
+            $('#simulatorStartStream').show();
+            $('#simulatorStopStream').hide();
+            $('#simulatorSendSingle').prop('disabled', false);
+            $('#simulatorStatus').html(`<div class="alert alert-warning"><i class="fas fa-stop-circle me-2"></i>Streaming stopped</div>`);
+        };
+        
+        function updateSimulatorStatus(status, telemetry, sent = 0, failed = 0) {
+            const tbody = $('#simulatorStatusTable');
+            const now = new Date().toLocaleTimeString();
+            const location = telemetry ? `${telemetry.lat.toFixed(6)}, ${telemetry.lon.toFixed(6)}` : 'N/A';
+            
+            if (status === 'success' || status === 'streaming') {
+                tbody.html(`
+                    <tr>
+                        <td>${now}</td>
+                        <td><span class="badge bg-${status === 'success' ? 'success' : 'info'}">${status === 'success' ? 'Sent' : 'Streaming'}</span></td>
+                        <td>${sent}</td>
+                        <td>${failed}</td>
+                        <td>${location}</td>
+                    </tr>
+                `);
+            }
+        }
+        
+        // Load devices when simulator tab is shown
+        $(document).on('shown.bs.tab', '#simulator-tab', function() {
+            loadSimulatorDevices();
         });
         
     });
