@@ -105,7 +105,15 @@ function db_begin_transaction(): bool
  */
 function db_commit(): bool
 {
-    return db()->commit();
+    try {
+        if (db()->inTransaction()) {
+            return db()->commit();
+        }
+        return true; // Already committed or no transaction
+    } catch (Exception $e) {
+        error_log('Transaction commit error: ' . $e->getMessage());
+        return false;
+    }
 }
 
 /**
@@ -113,7 +121,27 @@ function db_commit(): bool
  */
 function db_rollback(): bool
 {
-    return db()->rollBack();
+    try {
+        if (db()->inTransaction()) {
+            return db()->rollBack();
+        }
+        return true; // No active transaction
+    } catch (Exception $e) {
+        error_log('Transaction rollback error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Check if currently in a transaction
+ */
+function db_in_transaction(): bool
+{
+    try {
+        return db()->inTransaction();
+    } catch (Exception $e) {
+        return false;
+    }
 }
 
 /**

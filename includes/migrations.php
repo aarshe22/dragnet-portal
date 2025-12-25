@@ -127,25 +127,28 @@ function execute_migration(string $filename, string $filePath, ?int $userId = nu
             throw new Exception("Failed to read migration file: $filename");
         }
         
-        // Begin transaction
-        db_begin_transaction();
+        // Note: DDL statements (CREATE, ALTER, DROP) in MySQL auto-commit
+        // So we can't use transactions for them. We'll execute without transaction
+        // but still track the migration in the migrations table
+        
+        // For migration files, we need to execute raw SQL
+        // Remove SQL comments first
+        $sql = preg_replace('/--.*$/m', '', $sql); // Remove single-line comments
+        $sql = preg_replace('/\/\*.*?\*\//s', '', $sql); // Remove multi-line comments
+        
+        // Split by semicolon, but preserve empty statements for counting
+        $statements = array_filter(
+            array_map('trim', explode(';', $sql)),
+            function($stmt) {
+                return !empty(trim($stmt));
+            }
+        );
+        
+        $totalRows = 0;
+        $hasError = false;
+        $errorMessage = null;
         
         try {
-            // For migration files, we need to execute raw SQL
-            // Split by semicolon but be careful about strings and comments
-            // Remove SQL comments first
-            $sql = preg_replace('/--.*$/m', '', $sql); // Remove single-line comments
-            $sql = preg_replace('/\/\*.*?\*\//s', '', $sql); // Remove multi-line comments
-            
-            // Split by semicolon, but preserve empty statements for counting
-            $statements = array_filter(
-                array_map('trim', explode(';', $sql)),
-                function($stmt) {
-                    return !empty(trim($stmt));
-                }
-            );
-            
-            $totalRows = 0;
             foreach ($statements as $statement) {
                 $statement = trim($statement);
                 if (empty($statement)) {
@@ -177,7 +180,7 @@ function execute_migration(string $filename, string $filePath, ?int $userId = nu
                         INDEX idx_filename (filename),
                         INDEX idx_applied_at (applied_at)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
-                    db_execute($createTableSql);
+                    db_exec_raw($createTableSql);
                 } catch (Exception $e) {
                     // If we can't create the table, continue anyway
                     error_log('Warning: Could not create migrations table: ' . $e->getMessage());
@@ -204,14 +207,13 @@ function execute_migration(string $filename, string $filePath, ?int $userId = nu
                 );
             }
             
-            db_commit();
-            
             $result['success'] = true;
             $result['execution_time'] = round(microtime(true) - $startTime, 3);
             $result['rows_affected'] = $totalRows;
             
         } catch (Exception $e) {
-            db_rollback();
+            $hasError = true;
+            $errorMessage = $e->getMessage();
             throw $e;
         }
         
