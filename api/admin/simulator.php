@@ -92,6 +92,57 @@ switch ($action) {
             ['tenant_id' => $context['tenant_id']]
         );
         
+        // Auto-create a simulated device if none exists
+        if (empty($devices)) {
+            require_once __DIR__ . '/../../includes/admin.php';
+            
+            // Generate a unique IMEI for the simulated device
+            // IMEI format: 15 digits, starting with 86 (common for Teltonika)
+            // Format: 86 + 7 random digits = 15 digits total
+            $imei = '86' . str_pad(rand(0, 9999999), 7, '0', STR_PAD_LEFT);
+            
+            // Ensure IMEI is exactly 15 digits
+            if (strlen($imei) < 15) {
+                $imei = str_pad($imei, 15, '0', STR_PAD_RIGHT);
+            }
+            
+            // Check if IMEI already exists (unlikely but possible)
+            $existing = db_fetch_one("SELECT id FROM devices WHERE imei = :imei", ['imei' => $imei]);
+            $attempts = 0;
+            while ($existing && $attempts < 10) {
+                $imei = '86' . str_pad(rand(0, 9999999), 7, '0', STR_PAD_LEFT);
+                if (strlen($imei) < 15) {
+                    $imei = str_pad($imei, 15, '0', STR_PAD_RIGHT);
+                }
+                $existing = db_fetch_one("SELECT id FROM devices WHERE imei = :imei", ['imei' => $imei]);
+                $attempts++;
+            }
+            
+            // Generate device UID with SIM prefix
+            $deviceUid = 'SIM-' . strtoupper(substr(md5($imei . time() . $context['tenant_id']), 0, 8));
+            
+            // Create the simulated device
+            $deviceData = [
+                'tenant_id' => $context['tenant_id'],
+                'device_uid' => $deviceUid,
+                'imei' => $imei,
+                'model' => 'FMM13A',
+                'status' => 'offline'
+            ];
+            
+            try {
+                $deviceId = admin_create_device($deviceData);
+                
+                // Reload devices list
+                $devices = db_fetch_all(
+                    "SELECT id, device_uid, imei, status FROM devices WHERE tenant_id = :tenant_id ORDER BY device_uid",
+                    ['tenant_id' => $context['tenant_id']]
+                );
+            } catch (Exception $e) {
+                error_log('Failed to auto-create simulated device: ' . $e->getMessage());
+            }
+        }
+        
         json_response(['devices' => $devices]);
         break;
         

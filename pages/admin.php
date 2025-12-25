@@ -2249,12 +2249,31 @@ ob_start();
                 dataType: 'json',
                 success: function(response) {
                     const select = $('#simulatorDeviceId');
+                    const currentValue = select.val();
                     select.empty().append('<option value="">Select Device</option>');
-                    if (response.devices) {
+                    
+                    if (response.devices && response.devices.length > 0) {
                         response.devices.forEach(device => {
-                            select.append(`<option value="${device.id}">${escapeHtml(device.device_uid)} (${escapeHtml(device.imei || 'N/A')})</option>`);
+                            const isSimulated = device.device_uid && device.device_uid.startsWith('SIM-');
+                            const label = isSimulated 
+                                ? `${escapeHtml(device.device_uid)} (${escapeHtml(device.imei || 'N/A')}) - Simulated`
+                                : `${escapeHtml(device.device_uid)} (${escapeHtml(device.imei || 'N/A')})`;
+                            select.append(`<option value="${device.id}">${label}</option>`);
                         });
+                        
+                        // If no device was selected and we have devices, select the first one (likely the auto-created one)
+                        if (!currentValue && response.devices.length === 1 && response.devices[0].device_uid.startsWith('SIM-')) {
+                            select.val(response.devices[0].id);
+                            $('#simulatorStatus').html(`<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>A simulated device has been automatically created for testing. You can start streaming immediately!</div>`);
+                        }
+                    } else {
+                        $('#simulatorStatus').html(`<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No devices found. Please create a device first.</div>`);
                     }
+                },
+                error: function(xhr) {
+                    const select = $('#simulatorDeviceId');
+                    select.empty().append('<option value="">Error loading devices</option>');
+                    $('#simulatorStatus').html(`<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Failed to load devices: ${escapeHtml(xhr.responseJSON?.error || 'Unknown error')}</div>`);
                 }
             });
         };
