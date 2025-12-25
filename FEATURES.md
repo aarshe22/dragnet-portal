@@ -1,4 +1,4 @@
-# DragNet Portal - Complete Feature List
+# Dragnet Intelematics - Complete Feature List
 
 ## ✅ Production-Ready Platform Features
 

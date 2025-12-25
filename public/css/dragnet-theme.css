@@ -1,0 +1,520 @@
+/* Dragnet Intelematics - 1950's Dragnet TV Show Theme */
+
+/* Intel highlight styling */
+.intel-highlight {
+    color: #d4af37 !important;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+    font-weight: 700;
+}
+
+/* Import a retro serif font */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Special+Elite&display=swap');
+
+:root {
+    /* 1950's Dragnet Color Palette - Noir/Black & White with accents */
+    --dragnet-black: #1a1a1a;
+    --dragnet-dark-gray: #2d2d2d;
+    --dragnet-gray: #4a4a4a;
+    --dragnet-light-gray: #6b6b6b;
+    --dragnet-white: #f5f5f5;
+    --dragnet-cream: #faf8f3;
+    --dragnet-badge-gold: #d4af37;
+    --dragnet-red: #8b0000;
+    --dragnet-blue: #1e3a5f;
+    
+    /* Typography */
+    --dragnet-serif: 'Playfair Display', serif;
+    --dragnet-typewriter: 'Special Elite', 'Courier New', monospace;
+}
+
+/* Body styling - retro feel */
+body {
+    font-family: var(--dragnet-serif);
+    background: linear-gradient(135deg, var(--dragnet-cream) 0%, var(--dragnet-white) 100%);
+    color: var(--dragnet-black);
+    line-height: 1.6;
+}
+
+/* Navigation - Police Badge Style */
+.dragnet-nav {
+    background: linear-gradient(180deg, var(--dragnet-black) 0%, var(--dragnet-dark-gray) 100%) !important;
+    border-bottom: 3px solid var(--dragnet-badge-gold);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dragnet-nav .navbar-brand {
+    font-family: var(--dragnet-typewriter);
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dragnet-white) !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    position: relative;
+    padding-left: 2.5rem;
+}
+
+.dragnet-nav .navbar-brand::before {
+    content: "⚫";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.8rem;
+    color: var(--dragnet-badge-gold);
+    text-shadow: 0 0 10px var(--dragnet-badge-gold);
+}
+
+.dragnet-nav .navbar-brand i {
+    color: var(--dragnet-badge-gold);
+    text-shadow: 0 0 8px var(--dragnet-badge-gold);
+}
+
+.dragnet-nav .nav-link {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--dragnet-white) !important;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+    margin: 0 0.25rem;
+}
+
+.dragnet-nav .nav-link:hover,
+.dragnet-nav .nav-link.active {
+    color: var(--dragnet-badge-gold) !important;
+    border-bottom-color: var(--dragnet-badge-gold);
+    text-shadow: 0 0 5px var(--dragnet-badge-gold);
+}
+
+/* Cards - Retro Detective File Style */
+.card {
+    background: var(--dragnet-white);
+    border: 2px solid var(--dragnet-gray);
+    border-radius: 0;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--dragnet-badge-gold) 0%, var(--dragnet-gray) 100%);
+}
+
+.card-header {
+    background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%);
+    color: var(--dragnet-white);
+    border-bottom: 2px solid var(--dragnet-badge-gold);
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+}
+
+.card-body {
+    background: var(--dragnet-white);
+    padding: 1.5rem;
+}
+
+/* Buttons - Retro Style */
+.btn {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 0;
+    border: 2px solid;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: var(--dragnet-black);
+    border-color: var(--dragnet-black);
+    color: var(--dragnet-white);
+}
+
+.btn-primary:hover {
+    background: var(--dragnet-dark-gray);
+    border-color: var(--dragnet-badge-gold);
+    color: var(--dragnet-badge-gold);
+    box-shadow: 0 0 10px var(--dragnet-badge-gold);
+}
+
+.btn-success {
+    background: var(--dragnet-blue);
+    border-color: var(--dragnet-blue);
+    color: var(--dragnet-white);
+}
+
+.btn-danger {
+    background: var(--dragnet-red);
+    border-color: var(--dragnet-red);
+    color: var(--dragnet-white);
+}
+
+.btn-warning {
+    background: var(--dragnet-badge-gold);
+    border-color: var(--dragnet-badge-gold);
+    color: var(--dragnet-black);
+}
+
+/* Tables - Police Report Style */
+.table {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.85rem;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%);
+    color: var(--dragnet-white);
+    border: 2px solid var(--dragnet-black);
+    border-bottom: 3px solid var(--dragnet-badge-gold);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0.75rem;
+}
+
+.table tbody td {
+    border: 1px solid var(--dragnet-light-gray);
+    padding: 0.75rem;
+    background: var(--dragnet-white);
+}
+
+.table tbody tr:nth-child(even) {
+    background: var(--dragnet-cream);
+}
+
+.table tbody tr:hover {
+    background: #e8e6e0;
+    box-shadow: inset 0 0 0 2px var(--dragnet-badge-gold);
+}
+
+/* Badges - Case Number Style */
+.badge {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0;
+    border: 1px solid;
+}
+
+.badge.bg-primary {
+    background: var(--dragnet-black) !important;
+    border-color: var(--dragnet-black);
+}
+
+.badge.bg-success {
+    background: var(--dragnet-blue) !important;
+    border-color: var(--dragnet-blue);
+}
+
+.badge.bg-danger {
+    background: var(--dragnet-red) !important;
+    border-color: var(--dragnet-red);
+}
+
+.badge.bg-warning {
+    background: var(--dragnet-badge-gold) !important;
+    border-color: var(--dragnet-badge-gold);
+    color: var(--dragnet-black) !important;
+}
+
+/* Alerts - Police Radio Style */
+.alert {
+    border-radius: 0;
+    border-left: 4px solid;
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.alert-primary {
+    background: var(--dragnet-cream);
+    border-left-color: var(--dragnet-blue);
+    color: var(--dragnet-black);
+}
+
+.alert-success {
+    background: var(--dragnet-cream);
+    border-left-color: var(--dragnet-blue);
+    color: var(--dragnet-black);
+}
+
+.alert-danger {
+    background: #ffe6e6;
+    border-left-color: var(--dragnet-red);
+    color: var(--dragnet-red);
+}
+
+.alert-warning {
+    background: #fff8e1;
+    border-left-color: var(--dragnet-badge-gold);
+    color: var(--dragnet-black);
+}
+
+.alert-info {
+    background: var(--dragnet-cream);
+    border-left-color: var(--dragnet-blue);
+    color: var(--dragnet-black);
+}
+
+/* Forms - Typewriter Style */
+.form-control,
+.form-select {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.9rem;
+    border-radius: 0;
+    border: 2px solid var(--dragnet-gray);
+    background: var(--dragnet-white);
+    padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--dragnet-badge-gold);
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+    background: var(--dragnet-cream);
+}
+
+.form-label {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--dragnet-black);
+    margin-bottom: 0.5rem;
+}
+
+/* Footer - Case Closed Style */
+footer {
+    background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-black) 100%) !important;
+    border-top: 3px solid var(--dragnet-badge-gold);
+    color: var(--dragnet-white);
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+}
+
+footer .text-muted {
+    color: var(--dragnet-light-gray) !important;
+}
+
+/* Headings - Case File Headers */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--dragnet-typewriter);
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--dragnet-black);
+}
+
+h1 {
+    font-size: 2rem;
+    border-bottom: 3px solid var(--dragnet-badge-gold);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    border-bottom: 2px solid var(--dragnet-gray);
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Dropdowns */
+.dropdown-menu {
+    border-radius: 0;
+    border: 2px solid var(--dragnet-gray);
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+    background: var(--dragnet-white);
+}
+
+.dropdown-item {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: var(--dragnet-cream);
+    color: var(--dragnet-black);
+    border-left: 3px solid var(--dragnet-badge-gold);
+}
+
+/* Modal - Interrogation Room Style */
+.modal-content {
+    border-radius: 0;
+    border: 3px solid var(--dragnet-black);
+    box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+    background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%);
+    color: var(--dragnet-white);
+    border-bottom: 2px solid var(--dragnet-badge-gold);
+    font-family: var(--dragnet-typewriter);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.modal-body {
+    background: var(--dragnet-white);
+    font-family: var(--dragnet-serif);
+}
+
+.modal-footer {
+    background: var(--dragnet-cream);
+    border-top: 2px solid var(--dragnet-gray);
+}
+
+/* Code blocks - Teletype Style */
+code {
+    font-family: var(--dragnet-typewriter);
+    background: var(--dragnet-cream);
+    border: 1px solid var(--dragnet-gray);
+    padding: 0.2rem 0.4rem;
+    color: var(--dragnet-red);
+}
+
+pre {
+    font-family: var(--dragnet-typewriter);
+    background: var(--dragnet-black);
+    color: var(--dragnet-badge-gold);
+    border: 2px solid var(--dragnet-badge-gold);
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+/* Special Dragnet Elements */
+.dragnet-case-number {
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    color: var(--dragnet-gray);
+    text-transform: uppercase;
+}
+
+.dragnet-facts {
+    background: var(--dragnet-cream);
+    border-left: 4px solid var(--dragnet-badge-gold);
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: var(--dragnet-typewriter);
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.dragnet-facts::before {
+    content: "JUST THE FACTS: ";
+    font-weight: 700;
+    color: var(--dragnet-black);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] body {
+    background: linear-gradient(135deg, var(--dragnet-black) 0%, var(--dragnet-dark-gray) 100%);
+    color: var(--dragnet-white);
+}
+
+[data-theme="dark"] .card {
+    background: var(--dragnet-dark-gray);
+    border-color: var(--dragnet-gray);
+    color: var(--dragnet-white);
+}
+
+[data-theme="dark"] .card-body {
+    background: var(--dragnet-dark-gray);
+    color: var(--dragnet-white);
+}
+
+[data-theme="dark"] .table tbody td {
+    background: var(--dragnet-dark-gray);
+    color: var(--dragnet-white);
+    border-color: var(--dragnet-gray);
+}
+
+[data-theme="dark"] .table tbody tr:nth-child(even) {
+    background: var(--dragnet-black);
+}
+
+/* Additional Dragnet Elements */
+.dragnet-badge-icon {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, var(--dragnet-badge-gold) 0%, var(--dragnet-black) 100%);
+    border: 2px solid var(--dragnet-badge-gold);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 36px;
+    color: var(--dragnet-black);
+    font-weight: 700;
+    box-shadow: 0 0 10px var(--dragnet-badge-gold);
+}
+
+.dragnet-radio-static {
+    background: var(--dragnet-black);
+    color: var(--dragnet-badge-gold);
+    font-family: var(--dragnet-typewriter);
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--dragnet-badge-gold);
+    box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+/* Loading states - Teletype effect */
+.dragnet-loading {
+    font-family: var(--dragnet-typewriter);
+    color: var(--dragnet-gray);
+    letter-spacing: 2px;
+}
+
+.dragnet-loading::after {
+    content: "...";
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: "."; }
+    40% { content: ".."; }
+    60%, 100% { content: "..."; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dragnet-nav .navbar-brand {
+        font-size: 1.1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+}
+

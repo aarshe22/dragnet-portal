@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0d6efd">
-    <title><?= $title ?? 'DragNet Portal' ?></title>
+    <meta name="theme-color" content="#1a1a1a">
+    <title><?= $title ?? 'Dragnet Intelematics' ?></title>
+    <style>
+        .intelematics-brand {
+            color: inherit;
+        }
+        .intelematics-brand .intel-highlight {
+            color: #d4af37;
+            text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+            font-weight: 700;
+        }
+    </style>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,6 +27,8 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/public/css/app.css">
+    <!-- Dragnet 1950's Theme -->
+    <link rel="stylesheet" href="/public/css/dragnet-theme.css">
     
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
@@ -38,10 +50,10 @@
     
     <?php if ($shouldShowNav): ?>
     <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark dragnet-nav shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="/dashboard.php">
-                <i class="fas fa-satellite-dish me-2"></i>DragNet Portal
+                <i class="fas fa-shield-alt me-2"></i>Dragnet <span style="color: #d4af37; text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);">Intel</span>ematics
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -176,7 +188,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-md-6">
-                    <small class="text-muted">&copy; <?= date('Y') ?> DragNet Portal. All rights reserved.</small>
+                    <small class="text-muted">&copy; <?= date('Y') ?> Dragnet <span style="color: #d4af37;">Intel</span>ematics. All rights reserved.</small>
                 </div>
                 <div class="col-md-6 text-end">
                     <small class="text-muted">Version 1.0.0</small>

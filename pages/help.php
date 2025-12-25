@@ -78,8 +78,8 @@ ob_start();
                         <h4 class="mb-0"><i class="fas fa-rocket me-2"></i>Getting Started</h4>
                     </div>
                     <div class="card-body">
-                        <h5>Welcome to DragNet Portal</h5>
-                        <p>DragNet Portal is a comprehensive telematics and asset tracking platform designed to help you monitor and manage your fleet, vehicles, and equipment in real-time.</p>
+                        <h5>Welcome to Dragnet <span style="color: #d4af37; font-weight: 700;">Intel</span>ematics</h5>
+                        <p>Dragnet <span style="color: #d4af37; font-weight: 700;">Intel</span>ematics is a comprehensive telematics and asset tracking platform designed to help you monitor and manage your fleet, vehicles, and equipment in real-time. Just the facts, ma'am.</p>
                         
                         <h6 class="mt-4">Quick Start Guide</h6>
                         <ol>
@@ -137,7 +137,7 @@ ob_start();
                     </div>
                     <div class="card-body">
                         <h5>Adding Telematics Devices</h5>
-                        <p>DragNet Portal supports Teltonika FMM13A and other compatible telematics devices. Follow these steps to add and configure your device:</p>
+                        <p>Dragnet <span style="color: #d4af37; font-weight: 700;">Intel</span>ematics supports Teltonika FMM13A and other compatible telematics devices. Follow these steps to add and configure your device:</p>
 
                         <h6 class="mt-4">Step 1: Access Device Management</h6>
                         <ol>
@@ -192,7 +192,7 @@ ob_start();
                         </ol>
 
                         <h6 class="mt-3">Data Server Configuration</h6>
-                        <p>Configure the device to send data to DragNet Portal:</p>
+                        <p>Configure the device to send data to Dragnet <span style="color: #d4af37; font-weight: 700;">Intel</span>ematics:</p>
                         <ol>
                             <li>Server IP/URL: <code>portal.dragnet.ca</code></li>
                             <li>Port: <code>5027</code> (default Teltonika port, adjust if needed)</li>
@@ -206,7 +206,7 @@ ob_start();
                         </div>
 
                         <h6 class="mt-4">IO Element Configuration</h6>
-                        <p>Teltonika devices support multiple IO (Input/Output) elements. Configure them in DragNet Portal:</p>
+                        <p>Teltonika devices support multiple IO (Input/Output) elements. Configure them in Dragnet <span style="color: #d4af37; font-weight: 700;">Intel</span>ematics:</p>
                         <ol>
                             <li>Go to <strong>Devices</strong> → Select your device → <strong>IO Labels</strong> tab</li>
                             <li>Add labels for each IO element:

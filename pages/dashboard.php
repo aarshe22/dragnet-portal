@@ -20,7 +20,7 @@ session_start_custom($config['session']);
 require_auth();
 require_role('ReadOnly');
 
-$title = 'Dashboard - DragNet Portal';
+$title = 'Dashboard - Dragnet Intelematics';
 $showNav = true; // Show navigation
 $tenantId = require_tenant();
 
@@ -60,7 +60,8 @@ ob_start();
 
 <div class="row mb-4">
     <div class="col">
-        <h1><i class="fas fa-home me-2"></i>Dashboard</h1>
+        <h1><i class="fas fa-shield-alt me-2"></i>Dashboard</h1>
+        <p class="dragnet-case-number mb-0">Case File: <?= date('Ymd') ?>-<?= str_pad($tenantId, 4, '0', STR_PAD_LEFT) ?></p>
     </div>
 </div>
 

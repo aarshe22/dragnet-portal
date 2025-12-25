@@ -19,7 +19,7 @@ session_start_custom($config['session']);
 require_auth();
 require_role('ReadOnly');
 
-$title = 'Live Map - DragNet Portal';
+$title = 'Live Map - Dragnet Intelematics';
 $showNav = true;
 
 ob_start();

@@ -18,7 +18,7 @@ session_start_custom($config['session']);
 require_auth();
 require_role('Administrator');
 
-$title = 'Administration - DragNet Portal';
+$title = 'Administration - Dragnet Intelematics';
 $showNav = true;
 
 ob_start();

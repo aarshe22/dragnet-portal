@@ -1,5 +1,5 @@
 /**
- * DragNet Portal - Main Application JavaScript
+ * Dragnet Intelematics - Main Application JavaScript
  */
 
 // Global app object

@@ -1,4 +1,4 @@
--- DragNet Portal Database Schema
+-- Dragnet Intelematics Database Schema
 -- Multi-tenant telematics platform with Teltonika FMM13A support
 -- Updated to match live production schema
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * DragNet Portal Configuration
+ * Dragnet Intelematics Configuration
  */
 
 // Load .env file if it exists
@@ -28,7 +28,7 @@ if (file_exists($envFile)) {
 
 return [
     'app' => [
-        'name' => 'DragNet Portal',
+        'name' => 'Dragnet Intelematics',
         'version' => '1.0.0',
         'environment' => $_ENV['APP_ENV'] ?? 'production',
         'debug' => ($_ENV['APP_DEBUG'] ?? 'false') === 'true',
@@ -78,9 +78,9 @@ return [
     
     'pwa' => [
         'enabled' => true,
-        'name' => 'DragNet Portal',
+        'name' => 'Dragnet Intelematics',
         'short_name' => 'DragNet',
-        'theme_color' => '#0d6efd',
+        'theme_color' => '#1a1a1a',
         'background_color' => '#ffffff',
     ],
     

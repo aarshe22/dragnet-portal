@@ -4,7 +4,7 @@
  * Login Page
  */
 
-$title = 'Login - DragNet Portal';
+$title = 'Login - Dragnet Intelematics';
 $showNav = false;
 
 require_once __DIR__ . '/../includes/functions.php';
@@ -22,9 +22,9 @@ ob_start();
         <div class="card shadow">
             <div class="card-body p-5">
                 <div class="text-center mb-4">
-                    <i class="fas fa-satellite-dish fa-3x text-primary mb-3"></i>
-                    <h2 class="card-title">DragNet Portal</h2>
-                    <p class="text-muted">Sign in to continue</p>
+                    <i class="fas fa-shield-alt fa-3x mb-3" style="color: #d4af37;"></i>
+                    <h2 class="card-title" style="font-family: 'Special Elite', monospace; letter-spacing: 2px; text-transform: uppercase;">Dragnet <span style="color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);">INTEL</span>EMATICS</h2>
+                    <p class="text-muted" style="font-family: 'Special Elite', monospace; letter-spacing: 1px;">Just the facts, ma'am.</p>
                 </div>
                 
                 <?php if (isset($_GET['error'])): ?>

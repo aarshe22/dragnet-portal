@@ -16,7 +16,7 @@ session_start_custom($config['session']);
 
 require_auth();
 
-$title = 'Profile - DragNet Portal';
+$title = 'Profile - Dragnet Intelematics';
 $showNav = true;
 $context = get_tenant_context();
 

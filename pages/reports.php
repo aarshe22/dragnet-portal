@@ -19,7 +19,7 @@ session_start_custom($config['session']);
 require_auth();
 require_role('ReadOnly');
 
-$title = 'Reports - DragNet Portal';
+$title = 'Reports - Dragnet Intelematics';
 $showNav = true;
 $tenantId = require_tenant();
 

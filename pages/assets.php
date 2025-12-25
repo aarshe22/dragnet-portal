@@ -18,7 +18,7 @@ session_start_custom($config['session']);
 require_auth();
 require_role('ReadOnly');
 
-$title = 'Assets - DragNet Portal';
+$title = 'Assets - Dragnet Intelematics';
 $showNav = true;
 $tenantId = require_tenant();
 

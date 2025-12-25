@@ -14,7 +14,7 @@ header('Content-Type: application/manifest+json');
 echo json_encode([
     'name' => $pwaConfig['name'],
     'short_name' => $pwaConfig['short_name'],
-    'description' => 'DragNet Telematics Portal',
+    'description' => 'Dragnet Intelematics Portal',
     'start_url' => '/',
     'display' => 'standalone',
     'background_color' => $pwaConfig['background_color'],

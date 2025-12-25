@@ -1,7 +1,7 @@
 <?php
 
 /**
- * DragNet Portal - Main Router (Procedural)
+ * Dragnet Intelematics - Main Router (Procedural)
  * 
  * Routes requests to appropriate page files
  */

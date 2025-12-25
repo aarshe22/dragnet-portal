@@ -67,14 +67,14 @@ try {
                 $fromEmail = $emailSettings['email_from'] ?? 'noreply@example.com';
                 
                 // Send test email
-                $subject = 'DragNet Portal - Test Email';
-                $message = "This is a test email from DragNet Portal.\n\n";
+                $subject = 'Dragnet Intelematics - Test Email';
+                $message = "This is a test email from Dragnet Intelematics.\n\n";
                 $message .= "Email provider: " . $provider . "\n";
                 $message .= "Sent at: " . date('Y-m-d H:i:s') . "\n\n";
                 $message .= "If you received this email, your email relay configuration is working correctly.";
                 
-                $htmlMessage = "<html><body><h2>DragNet Portal - Test Email</h2>";
-                $htmlMessage .= "<p>This is a test email from DragNet Portal.</p>";
+                $htmlMessage = "<html><body><h2>Dragnet <span style='color: #d4af37; font-weight: 700;'>Intel</span>ematics - Test Email</h2>";
+                $htmlMessage .= "<p>This is a test email from Dragnet <span style='color: #d4af37; font-weight: 700;'>Intel</span>ematics.</p>";
                 $htmlMessage .= "<p><strong>Email provider:</strong> " . htmlspecialchars($provider) . "</p>";
                 $htmlMessage .= "<p><strong>Sent at:</strong> " . date('Y-m-d H:i:s') . "</p>";
                 $htmlMessage .= "<p>If you received this email, your email relay configuration is working correctly.</p>";

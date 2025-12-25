@@ -1,4 +1,4 @@
-# DragNet Telematics Web Portal
+# Dragnet Intelematics Web Portal
 
 Multi-tenant asset tracking and telematics management portal built with **procedural PHP** (no MVC frameworks).
 

@@ -12,5 +12,5 @@ To create icons:
 2. Save as PNG files with the names above
 3. Place them in this directory
 
-The icons should represent the DragNet Portal branding.
+The icons should represent the Dragnet Intelematics branding.
 

@@ -1,6 +1,6 @@
 {
     "name": "dragnet/portal",
-    "description": "DragNet Telematics Web Portal - Multi-tenant asset tracking",
+    "description": "Dragnet Intelematics Web Portal - Multi-tenant asset tracking",
     "type": "project",
     "require": {
         "php": ">=8.2",
