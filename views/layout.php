@@ -78,36 +78,40 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto d-flex flex-row align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link <?= get_current_page() === 'dashboard' ? 'active' : '' ?>" href="/dashboard.php">
-                            <i class="fas fa-home me-1"></i>Dashboard
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'dashboard' ? 'active' : '' ?>" href="/dashboard.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Dashboard - View overview and statistics">
+                            <i class="fas fa-home fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= get_current_page() === 'map' ? 'active' : '' ?>" href="/map.php">
-                            <i class="fas fa-map me-1"></i>Live Map
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'map' ? 'active' : '' ?>" href="/map.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Live Map - View real-time device locations">
+                            <i class="fas fa-map fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Live Map</span>
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle <?= in_array(get_current_page(), ['assets', 'asset_detail']) ? 'active' : '' ?>" href="#" id="assetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-car me-1"></i>Assets
+                        <a class="nav-link nav-icon-link dropdown-toggle <?= in_array(get_current_page(), ['assets', 'asset_detail']) ? 'active' : '' ?>" href="#" id="assetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle-tooltip="tooltip" data-bs-placement="bottom" title="Assets - Manage vehicles and equipment">
+                            <i class="fas fa-car fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Assets</span>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="assetsDropdown">
                             <li><a class="dropdown-item" href="/assets.php"><i class="fas fa-list me-2"></i>All Assets</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle <?= in_array(get_current_page(), ['devices', 'device_detail']) ? 'active' : '' ?>" href="#" id="devicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-microchip me-1"></i>Devices
+                        <a class="nav-link nav-icon-link dropdown-toggle <?= in_array(get_current_page(), ['devices', 'device_detail']) ? 'active' : '' ?>" href="#" id="devicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Devices - Manage telematics devices">
+                            <i class="fas fa-microchip fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Devices</span>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="devicesDropdown">
                             <li><a class="dropdown-item" href="/devices.php"><i class="fas fa-list me-2"></i>All Devices</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= get_current_page() === 'alerts' ? 'active' : '' ?>" href="/alerts.php">
-                            <i class="fas fa-bell me-1"></i>Alerts
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'alerts' ? 'active' : '' ?>" href="/alerts.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Alerts - View and manage system alerts">
+                            <i class="fas fa-bell fa-lg"></i>
                             <?php if ($isAuthenticated): ?>
                             <?php
                             try {
@@ -115,49 +119,56 @@
                                 $unreadCount = alert_count(['acknowledged' => false], $context['tenant_id']);
                                 if ($unreadCount > 0):
                                 ?>
-                                <span class="badge bg-danger ms-1"><?= $unreadCount ?></span>
+                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 0.6rem;"><?= $unreadCount ?></span>
                                 <?php endif; ?>
                             <?php } catch (Exception $e) {
                                 // Silently fail if alerts can't be loaded
                             } ?>
                             <?php endif; ?>
+                            <span class="nav-icon-label d-lg-none">Alerts</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= get_current_page() === 'geofences' ? 'active' : '' ?>" href="/geofences.php">
-                            <i class="fas fa-draw-polygon me-1"></i>Geofences
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'geofences' ? 'active' : '' ?>" href="/geofences.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Geofences - Define geographic boundaries">
+                            <i class="fas fa-draw-polygon fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Geofences</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= get_current_page() === 'reports' ? 'active' : '' ?>" href="/reports.php">
-                            <i class="fas fa-chart-bar me-1"></i>Reports
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'reports' ? 'active' : '' ?>" href="/reports.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Reports - View analytics and reports">
+                            <i class="fas fa-chart-bar fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Reports</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= get_current_page() === 'help' ? 'active' : '' ?>" href="/help.php">
-                            <i class="fas fa-question-circle me-1"></i>Help
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'help' ? 'active' : '' ?>" href="/help.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Help - Documentation and support">
+                            <i class="fas fa-question-circle fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Help</span>
                         </a>
                     </li>
                 </ul>
                 
-                <ul class="navbar-nav">
+                <ul class="navbar-nav d-flex flex-row align-items-center">
                     <!-- PWA Install Button -->
                     <li class="nav-item" id="pwaInstallContainer" style="display: none;">
-                        <button class="btn btn-outline-light btn-sm ms-2" id="pwaInstallButton" title="Install App">
-                            <i class="fas fa-download me-1"></i>Install App
+                        <button class="btn btn-outline-light btn-sm ms-2 nav-icon-link" id="pwaInstallButton" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Install App - Add to home screen">
+                            <i class="fas fa-download fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Install</span>
                         </button>
                     </li>
                     
                     <?php if ($isAdmin): ?>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle <?= get_current_page() === 'admin' ? 'active' : '' ?>" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-cog me-1"></i>Admin
+                        <a class="nav-link nav-icon-link dropdown-toggle <?= get_current_page() === 'admin' ? 'active' : '' ?>" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Admin - System administration">
+                            <i class="fas fa-cog fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Admin</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
                             <li><a class="dropdown-item" href="/admin.php"><i class="fas fa-tachometer-alt me-2"></i>Admin Panel</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/admin.php#tenants"><i class="fas fa-building me-2"></i>Tenants</a></li>
                             <li><a class="dropdown-item" href="/admin.php#users"><i class="fas fa-users me-2"></i>Users</a></li>
+                            <li><a class="dropdown-item" href="/admin.php#invites"><i class="fas fa-envelope me-2"></i>Invites</a></li>
                             <li><a class="dropdown-item" href="/admin.php#devices"><i class="fas fa-microchip me-2"></i>Devices</a></li>
                             <li><a class="dropdown-item" href="/admin.php#logs"><i class="fas fa-list-alt me-2"></i>Telematics Logs</a></li>
                         </ul>
@@ -165,17 +176,20 @@
                     <?php endif; ?>
                     
                     <li class="nav-item">
-                        <button class="btn btn-link nav-link text-light" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
-                            <i class="fas fa-sun" id="themeIcon"></i>
+                        <button class="btn btn-link nav-link text-light nav-icon-link" id="themeToggle" onclick="toggleTheme()" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle Dark/Light Mode">
+                            <i class="fas fa-sun fa-lg" id="themeIcon"></i>
+                            <span class="nav-icon-label d-lg-none">Theme</span>
                         </button>
                     </li>
                     
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user me-1"></i>
-                            <?= htmlspecialchars($context['user_email'] ?? 'User') ?>
+                        <a class="nav-link nav-icon-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-toggle-tooltip="tooltip" data-bs-placement="bottom" title="User Menu - <?= htmlspecialchars($context['user_email'] ?? 'User') ?>">
+                            <i class="fas fa-user fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none"><?= htmlspecialchars($context['user_email'] ?? 'User') ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li class="px-3 py-2 d-lg-none"><strong><?= htmlspecialchars($context['user_email'] ?? 'User') ?></strong></li>
+                            <li class="px-3 py-2 d-lg-none"><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/profile.php"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
                             <li><a class="dropdown-item" href="/settings.php"><i class="fas fa-cog me-2"></i>Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -592,6 +606,11 @@
                 }
             }
         })();
+        
+        // Initialize Bootstrap tooltips
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
     </script>
 </body>
 </html>

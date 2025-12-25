@@ -109,6 +109,59 @@ small.text-muted {
     text-shadow: 0 0 5px var(--dragnet-badge-gold);
 }
 
+/* Icon-only navigation for desktop */
+.nav-icon-link {
+    padding: 0.75rem 1rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+    position: relative;
+}
+
+.nav-icon-link i {
+    margin: 0 !important;
+}
+
+.nav-icon-label {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Hide labels on desktop, show on mobile */
+@media (min-width: 992px) {
+    .nav-icon-label {
+        display: none !important;
+    }
+}
+
+/* Mobile: Show labels and use standard menu */
+@media (max-width: 991px) {
+    .navbar-nav {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .nav-icon-link {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 0.75rem 1rem !important;
+    }
+    
+    .nav-icon-link i {
+        width: 24px;
+        text-align: center;
+    }
+    
+    .navbar-toggler {
+        border: 1px solid var(--dragnet-badge-gold);
+    }
+    
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28212, 175, 55, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+}
+
 /* Cards - Retro Detective File Style */
 .card {
     background: var(--dragnet-white);
