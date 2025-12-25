@@ -104,6 +104,11 @@
                             <i class="fas fa-chart-bar me-1"></i>Reports
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= get_current_page() === 'help' ? 'active' : '' ?>" href="/help.php">
+                            <i class="fas fa-question-circle me-1"></i>Help
+                        </a>
+                    </li>
                 </ul>
                 
                 <ul class="navbar-nav">

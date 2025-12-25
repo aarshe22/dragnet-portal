@@ -108,6 +108,8 @@ $pageMap = [
     '/profile.php' => 'profile.php',
     '/settings' => 'settings.php',
     '/settings.php' => 'settings.php',
+    '/help' => 'help.php',
+    '/help.php' => 'help.php',
 ];
 
 // Check if it's an API endpoint
