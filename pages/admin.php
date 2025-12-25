@@ -230,6 +230,7 @@ ob_start();
                             <h6><i class="fas fa-envelope me-2"></i>Email Relay Provider Settings</h6>
                             <p class="text-muted">Configure the email relay provider for sending notifications and alerts.</p>
                             
+                            <form id="emailSettingsForm" onsubmit="return false;">
                             <div class="row">
                                 <div class="col-md-6">
                                     <label class="form-label">Email Provider</label>
@@ -411,16 +412,17 @@ ob_start();
                             </div>
                             
                             <div class="mt-3">
-                                <button class="btn btn-primary" id="btnSaveEmailSettings">
+                                <button type="button" class="btn btn-primary" id="btnSaveEmailSettings">
                                     <i class="fas fa-save me-1"></i>Save Email Settings
                                 </button>
-                                <button class="btn btn-secondary" id="btnLoadEmailSettings">
+                                <button type="button" class="btn btn-secondary" id="btnLoadEmailSettings">
                                     <i class="fas fa-sync me-1"></i>Reset to Defaults
                                 </button>
-                                <button class="btn btn-info" id="btnTestEmailSettings">
+                                <button type="button" class="btn btn-info" id="btnTestEmailSettings">
                                     <i class="fas fa-paper-plane me-1"></i>Send Test Email
                                 </button>
                             </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -1503,7 +1505,7 @@ ob_start();
             };
             
             // Add provider-specific settings
-            if (provider === 'smtp') {
+            if (['smtp', 'smtp_com', 'smtp2go', 'gmail', 'outlook', 'yahoo', 'zoho', 'protonmail', 'fastmail', 'mail_com', 'aol'].includes(provider)) {
                 const host = $('#smtpHost').val();
                 const port = parseInt($('#smtpPort').val());
                 const encryption = $('#smtpEncryption').val();

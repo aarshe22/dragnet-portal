@@ -31,16 +31,39 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+    
+    // Don't cache API requests - always fetch from network
+    if (url.pathname.startsWith('/api/')) {
+        event.respondWith(
+            fetch(event.request).catch((error) => {
+                // Return a proper error response instead of undefined
+                return new Response(JSON.stringify({ error: 'Network error' }), {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            })
+        );
+        return;
+    }
+    
+    // Handle navigation requests
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request).catch(() => {
-                return caches.match(OFFLINE_URL);
+                return caches.match(OFFLINE_URL).then((response) => {
+                    return response || new Response('Offline', { status: 503 });
+                });
             })
         );
     } else {
+        // For other requests, try network first, then cache
         event.respondWith(
             fetch(event.request).catch(() => {
-                return caches.match(event.request);
+                return caches.match(event.request).then((response) => {
+                    return response || new Response('Not found in cache', { status: 404 });
+                });
             })
         );
     }
