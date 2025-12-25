@@ -58,24 +58,43 @@ try {
                     exit;
                 }
                 
+                // Load email sending functions
+                require_once __DIR__ . '/../../includes/email.php';
+                
                 // Get current email settings
                 $emailSettings = get_settings();
                 $provider = $emailSettings['email_provider'] ?? 'smtp';
                 $fromEmail = $emailSettings['email_from'] ?? 'noreply@example.com';
                 
-                // Send test email (basic implementation - can be enhanced)
+                // Send test email
                 $subject = 'DragNet Portal - Test Email';
                 $message = "This is a test email from DragNet Portal.\n\n";
                 $message .= "Email provider: " . $provider . "\n";
                 $message .= "Sent at: " . date('Y-m-d H:i:s') . "\n\n";
                 $message .= "If you received this email, your email relay configuration is working correctly.";
                 
-                // For now, just return success (actual email sending would be implemented in includes/email.php)
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Test email queued (email sending functionality to be implemented)',
-                    'note' => 'Email sending requires implementation in includes/email.php'
-                ], JSON_PRETTY_PRINT);
+                $htmlMessage = "<html><body><h2>DragNet Portal - Test Email</h2>";
+                $htmlMessage .= "<p>This is a test email from DragNet Portal.</p>";
+                $htmlMessage .= "<p><strong>Email provider:</strong> " . htmlspecialchars($provider) . "</p>";
+                $htmlMessage .= "<p><strong>Sent at:</strong> " . date('Y-m-d H:i:s') . "</p>";
+                $htmlMessage .= "<p>If you received this email, your email relay configuration is working correctly.</p>";
+                $htmlMessage .= "</body></html>";
+                
+                // Send email (this will automatically log the attempt)
+                $result = send_email($testEmailTo, $subject, $message, $htmlMessage);
+                
+                if ($result) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Test email sent successfully. Check email logs for details.'
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    http_response_code(500);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Failed to send test email. Check email logs for details.'
+                    ], JSON_PRETTY_PRINT);
+                }
                 exit;
             }
             
