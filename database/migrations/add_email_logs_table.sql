@@ -1,4 +1,4 @@
--- Add email_logs table for tracking email sending attempts
+SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE IF NOT EXISTS email_logs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id INT UNSIGNED NULL,
@@ -11,11 +11,10 @@ CREATE TABLE IF NOT EXISTS email_logs (
     debug_data JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     sent_at TIMESTAMP NULL,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     INDEX idx_tenant (tenant_id),
     INDEX idx_recipient (recipient),
     INDEX idx_status (status),
     INDEX idx_created (created_at),
     INDEX idx_provider (provider)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
+SET FOREIGN_KEY_CHECKS = 1

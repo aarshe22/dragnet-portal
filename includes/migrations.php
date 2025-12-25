@@ -14,13 +14,12 @@ require_once __DIR__ . '/auth.php';
 function migrations_table_exists(): bool
 {
     try {
-        db_fetch_one("SELECT 1 FROM migrations LIMIT 1");
-        return true;
+        $result = db()->query("SELECT 1 FROM migrations LIMIT 1");
+        return $result !== false;
     } catch (PDOException $e) {
-        $msg = $e->getMessage();
-        if (stripos($msg, "doesn't exist") !== false || 
-            stripos($msg, "Unknown table") !== false ||
-            stripos($msg, "Table") !== false) {
+        $code = $e->getCode();
+        // MySQL error code 1146 = Table doesn't exist
+        if ($code == 1146 || stripos($e->getMessage(), "doesn't exist") !== false) {
             return false;
         }
         throw $e;
@@ -76,11 +75,10 @@ function is_migration_applied(string $filename): ?array
     }
     
     try {
-        $migration = db_fetch_one(
+        return db_fetch_one(
             "SELECT * FROM migrations WHERE filename = :filename",
             ['filename' => $filename]
         );
-        return $migration;
     } catch (Exception $e) {
         return null;
     }
@@ -104,6 +102,7 @@ function get_applied_migrations(): array
 
 /**
  * Execute a migration file
+ * Simplified approach: read file and execute directly using PDO::exec()
  */
 function execute_migration(string $filename, string $filePath, ?int $userId = null): array
 {
@@ -127,100 +126,77 @@ function execute_migration(string $filename, string $filePath, ?int $userId = nu
             throw new Exception("Failed to read migration file: $filename");
         }
         
-        // Note: DDL statements (CREATE, ALTER, DROP) in MySQL auto-commit
-        // So we can't use transactions for them. We'll execute without transaction
-        // but still track the migration in the migrations table
-        
-        // For migration files, we need to execute raw SQL
-        // Clean up the SQL: remove comments and normalize whitespace
-        $sql = preg_replace('/--.*$/m', '', $sql); // Remove single-line comments
-        $sql = preg_replace('/\/\*.*?\*\//s', '', $sql); // Remove multi-line comments
+        // Clean up SQL: remove comments and normalize
+        $sql = preg_replace('/^\s*--.*$/m', '', $sql); // Remove comment lines
+        $sql = preg_replace('/\/\*.*?\*\//s', '', $sql); // Remove block comments
         $sql = trim($sql);
         
-        // Split SQL into individual statements and execute them one by one
-        // This avoids issues with parameter placeholders and is more reliable
-        $statements = preg_split('/;\s*(?=(?:[^\'"]*(?:"[^"]*"|\'[^\']*\')[^\'"]*)*$)/', $sql);
-        $statements = array_filter(array_map('trim', $statements), function($stmt) {
-            return !empty($stmt) && !preg_match('/^(SET|USE|DELIMITER)/i', $stmt);
-        });
+        if (empty($sql)) {
+            throw new Exception("Migration file is empty after removing comments");
+        }
         
-        $totalRows = 0;
-        foreach ($statements as $index => $statement) {
-            if (empty(trim($statement))) {
+        // Split into individual statements and execute one by one
+        // This is more reliable than trying to execute all at once
+        $statements = explode(';', $sql);
+        $rowsAffected = 0;
+        
+        foreach ($statements as $statement) {
+            $statement = trim($statement);
+            if (empty($statement)) {
                 continue;
             }
             
-            try {
-                // Execute each statement individually using exec()
-                $rows = db_exec_raw($statement);
-                if ($rows !== false) {
-                    $totalRows += $rows;
-                }
-                // Note: DDL statements (CREATE, ALTER, DROP) return 0 rows affected
-                // which is normal and doesn't indicate failure
-            } catch (PDOException $e) {
-                // Provide more context about which statement failed
-                $stmtNum = $index + 1;
-                $stmtPreview = substr($statement, 0, 150);
-                throw new Exception(
-                    "Error executing statement #{$stmtNum} of migration: " . $e->getMessage() . 
-                    "\nStatement preview: " . $stmtPreview . (strlen($statement) > 150 ? '...' : '')
-                );
+            // Execute each statement
+            $result = db()->exec($statement . ';');
+            if ($result !== false) {
+                $rowsAffected += $result;
             }
         }
         
-        // Ensure migrations table exists (for tracking)
-        // If it doesn't exist and this isn't the create_migrations_table migration, try to create it
-        if (!migrations_table_exists() && $filename !== 'create_migrations_table.sql') {
-            // Try to create the migrations table
-            try {
-                $createTableSql = "CREATE TABLE IF NOT EXISTS migrations (
-                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    filename VARCHAR(255) NOT NULL UNIQUE,
-                    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    applied_by INT UNSIGNED NULL,
-                    execution_time DECIMAL(10, 3) NULL,
-                    error_message TEXT NULL,
-                    status ENUM('success', 'failed', 'partial') DEFAULT 'success',
-                    INDEX idx_filename (filename),
-                    INDEX idx_applied_at (applied_at)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
-                db_exec_raw($createTableSql);
-            } catch (Exception $e) {
-                // If we can't create the table, continue anyway
-                error_log('Warning: Could not create migrations table: ' . $e->getMessage());
-            }
+        // Ensure migrations table exists for tracking
+        if (!migrations_table_exists()) {
+            // Create migrations table if it doesn't exist
+            $createTableSql = "CREATE TABLE IF NOT EXISTS migrations (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                filename VARCHAR(255) NOT NULL UNIQUE,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                applied_by INT UNSIGNED NULL,
+                execution_time DECIMAL(10, 3) NULL,
+                error_message TEXT NULL,
+                status ENUM('success', 'failed', 'partial') DEFAULT 'success',
+                INDEX idx_filename (filename),
+                INDEX idx_applied_at (applied_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+            db()->exec($createTableSql);
         }
         
-        // Record migration in migrations table
-        if (migrations_table_exists()) {
-            $executionTime = microtime(true) - $startTime;
-            db_execute(
-                "INSERT INTO migrations (filename, applied_by, execution_time, status) 
-                 VALUES (:filename, :applied_by, :execution_time, 'success')
-                 ON DUPLICATE KEY UPDATE 
-                 applied_at = CURRENT_TIMESTAMP,
-                 applied_by = :applied_by,
-                 execution_time = :execution_time,
-                 status = 'success',
-                 error_message = NULL",
-                [
-                    'filename' => $filename,
-                    'applied_by' => $userId,
-                    'execution_time' => round($executionTime, 3)
-                ]
-            );
-        }
+        // Record successful migration
+        $executionTime = microtime(true) - $startTime;
+        db_execute(
+            "INSERT INTO migrations (filename, applied_by, execution_time, status) 
+             VALUES (:filename, :applied_by, :execution_time, 'success')
+             ON DUPLICATE KEY UPDATE 
+             applied_at = CURRENT_TIMESTAMP,
+             applied_by = :applied_by,
+             execution_time = :execution_time,
+             status = 'success',
+             error_message = NULL",
+            [
+                'filename' => $filename,
+                'applied_by' => $userId,
+                'execution_time' => round($executionTime, 3)
+            ]
+        );
         
         $result['success'] = true;
-        $result['execution_time'] = round(microtime(true) - $startTime, 3);
-        $result['rows_affected'] = $totalRows;
+        $result['execution_time'] = round($executionTime, 3);
+        $result['rows_affected'] = $rowsAffected !== false ? $rowsAffected : 0;
         
     } catch (Exception $e) {
         $executionTime = microtime(true) - $startTime;
         $errorMessage = $e->getMessage();
         
-        // Record failed migration
+        // Record failed migration if table exists
         if (migrations_table_exists()) {
             try {
                 db_execute(
@@ -240,7 +216,6 @@ function execute_migration(string $filename, string $filePath, ?int $userId = nu
                     ]
                 );
             } catch (Exception $recordError) {
-                // If we can't record the error, log it
                 error_log('Failed to record migration error: ' . $recordError->getMessage());
             }
         }
@@ -287,4 +262,3 @@ function get_migration_status(): array
     
     return $status;
 }
-

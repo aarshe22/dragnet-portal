@@ -145,30 +145,4 @@ function db_in_transaction(): bool
     }
 }
 
-/**
- * Execute raw SQL (for migrations, DDL statements, etc.)
- * Use this for SQL that doesn't need parameter binding
- */
-function db_exec_raw(string $sql): int
-{
-    try {
-        $result = db()->exec($sql);
-        if ($result === false) {
-            $errorInfo = db()->errorInfo();
-            throw new PDOException(
-                'SQL execution failed: ' . ($errorInfo[2] ?? 'Unknown error'),
-                (int)($errorInfo[0] ?? 0)
-            );
-        }
-        return $result;
-    } catch (PDOException $e) {
-        // Re-throw with more context
-        throw new PDOException(
-            'Failed to execute raw SQL: ' . $e->getMessage() . 
-            ' | SQL: ' . substr($sql, 0, 200),
-            (int)$e->getCode(),
-            $e
-        );
-    }
-}
 
