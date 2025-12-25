@@ -54,6 +54,11 @@ ob_start();
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button">
+                    <i class="fas fa-envelope me-1"></i>Email Integration
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button">
                     <i class="fas fa-cog me-1"></i>Settings
                 </button>
@@ -161,73 +166,14 @@ ob_start();
                 </div>
             </div>
             
-            <!-- Settings Tab -->
-            <div class="tab-pane fade" id="settings" role="tabpanel">
+            <!-- Email Integration Tab -->
+            <div class="tab-pane fade" id="email" role="tabpanel">
                 <div class="card mt-3">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Application Settings</h5>
+                        <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Email Integration Settings</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-4">
-                            <h6><i class="fas fa-map me-2"></i>Map Provider Settings</h6>
-                            <p class="text-muted">Select the default mapping provider for the Live Map view.</p>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">Map Provider</label>
-                                    <select class="form-select" id="mapProviderSelect">
-                                        <option value="openstreetmap">OpenStreetMap</option>
-                                        <option value="openstreetmap_fr">OpenStreetMap France</option>
-                                        <option value="openstreetmap_de">OpenStreetMap DE</option>
-                                        <option value="cartodb_positron">CartoDB Positron</option>
-                                        <option value="cartodb_dark">CartoDB Dark Matter</option>
-                                        <option value="stamen_terrain">Stamen Terrain</option>
-                                        <option value="stamen_toner">Stamen Toner</option>
-                                        <option value="stamen_watercolor">Stamen Watercolor</option>
-                                        <option value="esri_worldstreetmap">Esri World Street Map</option>
-                                        <option value="esri_worldtopomap">Esri World Topo Map</option>
-                                        <option value="esri_worldimagery">Esri World Imagery</option>
-                                        <option value="opentopomap">OpenTopoMap</option>
-                                        <option value="cyclosm">CyclOSM</option>
-                                        <option value="wikimedia">Wikimedia Maps</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Default Zoom Level</label>
-                                    <input type="number" class="form-control" id="mapZoom" min="1" max="20" value="10">
-                                </div>
-                            </div>
-                            
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Default Center Latitude</label>
-                                    <input type="number" class="form-control" id="mapCenterLat" step="0.000001" value="40.7128">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Default Center Longitude</label>
-                                    <input type="number" class="form-control" id="mapCenterLon" step="0.000001" value="-74.0060">
-                                </div>
-                            </div>
-                            
-                            <div class="mt-3">
-                                <div id="mapPreview" style="height: 300px; border: 1px solid #ddd; border-radius: 0.375rem;"></div>
-                                <small class="text-muted">Preview of selected map provider</small>
-                            </div>
-                            
-                            <div class="mt-3">
-                                <button class="btn btn-primary" id="btnSaveMapSettings">
-                                    <i class="fas fa-save me-1"></i>Save Map Settings
-                                </button>
-                                <button class="btn btn-secondary" id="btnLoadMapSettings">
-                                    <i class="fas fa-sync me-1"></i>Reset to Defaults
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="mb-4">
-                            <h6><i class="fas fa-envelope me-2"></i>Email Relay Provider Settings</h6>
                             <p class="text-muted">Configure the email relay provider for sending notifications and alerts.</p>
                             
                             <form id="emailSettingsForm" onsubmit="return false;">
@@ -423,6 +369,72 @@ ob_start();
                                 </button>
                             </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Application Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6><i class="fas fa-map me-2"></i>Map Provider Settings</h6>
+                            <p class="text-muted">Select the default mapping provider for the Live Map view.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Map Provider</label>
+                                    <select class="form-select" id="mapProviderSelect">
+                                        <option value="openstreetmap">OpenStreetMap</option>
+                                        <option value="openstreetmap_fr">OpenStreetMap France</option>
+                                        <option value="openstreetmap_de">OpenStreetMap DE</option>
+                                        <option value="cartodb_positron">CartoDB Positron</option>
+                                        <option value="cartodb_dark">CartoDB Dark Matter</option>
+                                        <option value="stamen_terrain">Stamen Terrain</option>
+                                        <option value="stamen_toner">Stamen Toner</option>
+                                        <option value="stamen_watercolor">Stamen Watercolor</option>
+                                        <option value="esri_worldstreetmap">Esri World Street Map</option>
+                                        <option value="esri_worldtopomap">Esri World Topo Map</option>
+                                        <option value="esri_worldimagery">Esri World Imagery</option>
+                                        <option value="opentopomap">OpenTopoMap</option>
+                                        <option value="cyclosm">CyclOSM</option>
+                                        <option value="wikimedia">Wikimedia Maps</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Zoom Level</label>
+                                    <input type="number" class="form-control" id="mapZoom" min="1" max="20" value="10">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Center Latitude</label>
+                                    <input type="number" class="form-control" id="mapCenterLat" step="0.000001" value="40.7128">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Default Center Longitude</label>
+                                    <input type="number" class="form-control" id="mapCenterLon" step="0.000001" value="-74.0060">
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <div id="mapPreview" style="height: 300px; border: 1px solid #ddd; border-radius: 0.375rem;"></div>
+                                <small class="text-muted">Preview of selected map provider</small>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button class="btn btn-primary" id="btnSaveMapSettings">
+                                    <i class="fas fa-save me-1"></i>Save Map Settings
+                                </button>
+                                <button class="btn btn-secondary" id="btnLoadMapSettings">
+                                    <i class="fas fa-sync me-1"></i>Reset to Defaults
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -703,6 +715,8 @@ ob_start();
                     loadDevices();
                 } else if (target === '#logs') {
                     loadLogs();
+                } else if (target === '#email') {
+                    loadEmailSettings();
                 } else if (target === '#settings') {
                     setTimeout(function() {
                         if (!mapPreview && typeof L !== 'undefined') {
