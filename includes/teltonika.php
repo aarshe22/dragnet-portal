@@ -56,8 +56,16 @@ function teltonika_store_telemetry(int $deviceId, array $telemetryData): bool
     try {
         db_execute($sql, $data);
         
+        // Get the inserted telemetry ID
+        $telemetryId = db_last_insert_id();
+        $telemetryData['telemetry_id'] = $telemetryId;
+        
         // Update device status
         teltonika_update_device_from_telemetry($deviceId, $telemetryData);
+        
+        // Detect and process trips
+        require_once __DIR__ . '/trips.php';
+        trip_detect_from_telemetry($deviceId, $telemetryData);
         
         return true;
     } catch (Exception $e) {

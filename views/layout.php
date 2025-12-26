@@ -137,6 +137,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link nav-icon-link <?= get_current_page() === 'trips' ? 'active' : '' ?>" href="/trips.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Trips - View trip history and playback">
+                            <i class="fas fa-route fa-lg"></i>
+                            <span class="nav-icon-label d-lg-none">Trips</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link nav-icon-link <?= get_current_page() === 'reports' ? 'active' : '' ?>" href="/reports.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Reports - View analytics and reports">
                             <i class="fas fa-chart-bar fa-lg"></i>
                             <span class="nav-icon-label d-lg-none">Reports</span>
