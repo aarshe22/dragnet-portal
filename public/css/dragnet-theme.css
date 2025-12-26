@@ -184,7 +184,7 @@ small.text-muted {
 
 .card-header {
     background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%);
-    color: var(--dragnet-white);
+    color: var(--dragnet-white) !important;
     border-bottom: 2px solid var(--dragnet-badge-gold);
     font-family: var(--dragnet-typewriter);
     font-size: 0.9rem;
@@ -192,6 +192,30 @@ small.text-muted {
     text-transform: uppercase;
     padding: 0.75rem 1rem;
     font-weight: 700;
+}
+
+/* Ensure all text in card headers is white in light mode */
+.card-header * {
+    color: var(--dragnet-white) !important;
+}
+
+.card-header h1,
+.card-header h2,
+.card-header h3,
+.card-header h4,
+.card-header h5,
+.card-header h6 {
+    color: var(--dragnet-white) !important;
+}
+
+.card-header .text-muted {
+    color: #e0e0e0 !important;
+    opacity: 0.9;
+}
+
+.card-header i {
+    color: var(--dragnet-badge-gold) !important;
+    opacity: 1;
 }
 
 .card-body {
@@ -277,13 +301,22 @@ small.text-muted {
 
 .table thead th {
     background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%);
-    color: var(--dragnet-white);
+    color: var(--dragnet-white) !important;
     border: 2px solid var(--dragnet-black);
     border-bottom: 3px solid var(--dragnet-badge-gold);
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
     padding: 0.75rem;
+}
+
+/* Ensure all text in table headers is white in light mode */
+.table thead th * {
+    color: var(--dragnet-white) !important;
+}
+
+.table thead th i {
+    color: var(--dragnet-badge-gold) !important;
 }
 
 .table tbody td {
@@ -529,11 +562,30 @@ h2 {
 
 .modal-header {
     background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%);
-    color: var(--dragnet-white);
+    color: var(--dragnet-white) !important;
     border-bottom: 2px solid var(--dragnet-badge-gold);
     font-family: var(--dragnet-typewriter);
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+/* Ensure all text in modal headers is white in light mode */
+.modal-header * {
+    color: var(--dragnet-white) !important;
+}
+
+.modal-header h1,
+.modal-header h2,
+.modal-header h3,
+.modal-header h4,
+.modal-header h5,
+.modal-header h5,
+.modal-header h6 {
+    color: var(--dragnet-white) !important;
+}
+
+.modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
 }
 
 .modal-body {
