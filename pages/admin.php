@@ -896,10 +896,17 @@ ob_start();
                 require_once __DIR__ . '/../includes/schema_comparison.php';
                 
                 // Get current user ID from session
-                $userId = session_get('user_id');
+                $userId = session_get('user_id', null);
+                if ($userId === null) {
+                    // Fallback: try to get from tenant context
+                    $context = get_tenant_context();
+                    $userId = $context ? $context['user_id'] : null;
+                }
                 
-                // Auto-scan on page load
-                migrations_auto_scan($userId);
+                // Auto-scan on page load (only if we have a user ID)
+                if ($userId !== null) {
+                    migrations_auto_scan($userId);
+                }
                 
                 // Get migration status (auto-scans internally)
                 $migrations = migrations_get_status($userId);
