@@ -30,7 +30,7 @@ switch ($method) {
         $action = $_GET['action'] ?? 'status';
         
         if ($action === 'status') {
-            $migrations = migrations_get_status();
+            $migrations = migrations_get_status($userId);
             json_response($migrations);
         } elseif ($action === 'content') {
             $filename = $_GET['filename'] ?? '';
@@ -43,10 +43,6 @@ switch ($method) {
             } else {
                 json_response(['filename' => $filename, 'content' => $content]);
             }
-        } elseif ($action === 'scan') {
-            require_once __DIR__ . '/../../includes/migrations.php';
-            $result = migrations_scan_and_mark($userId);
-            json_response($result);
         } else {
             json_response(['error' => 'Invalid action'], 400);
         }
@@ -54,23 +50,39 @@ switch ($method) {
         
     case 'POST':
         $data = input();
-        $filename = $data['filename'] ?? '';
+        $action = $data['action'] ?? '';
         
-        if (!$filename) {
-            json_response(['error' => 'Filename required'], 400);
-        }
-        
-        // Validate filename (prevent directory traversal)
-        if (preg_match('/[\/\\\\]/', $filename) || !preg_match('/\.sql$/', $filename)) {
-            json_response(['error' => 'Invalid filename'], 400);
-        }
-        
-        $result = migrations_apply($filename, $userId);
-        
-        if ($result['success']) {
-            json_response($result);
+        if ($action === 'apply') {
+            $filename = $data['filename'] ?? '';
+            if (!$filename) {
+                json_response(['error' => 'Filename required'], 400);
+            }
+            
+            // Validate filename (prevent directory traversal)
+            if (preg_match('/[\/\\\\]/', $filename) || !preg_match('/\.sql$/', $filename)) {
+                json_response(['error' => 'Invalid filename'], 400);
+            }
+            
+            $result = migrations_apply($filename, $userId);
+            
+            if ($result['success']) {
+                json_response($result);
+            } else {
+                json_response($result, 500);
+            }
+        } elseif ($action === 'purge') {
+            $filename = $data['filename'] ?? '';
+            if (!$filename) {
+                json_response(['error' => 'Filename required'], 400);
+            }
+            
+            if (migrations_purge($filename)) {
+                json_response(['message' => 'Migration record purged']);
+            } else {
+                json_response(['error' => 'Failed to purge migration record'], 500);
+            }
         } else {
-            json_response($result, 500);
+            json_response(['error' => 'Invalid action'], 400);
         }
         break;
         

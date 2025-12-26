@@ -891,26 +891,153 @@ ob_start();
             
             <!-- Database Migrations Tab -->
             <div class="tab-pane fade" id="migrations" role="tabpanel">
+                <?php
+                require_once __DIR__ . '/../includes/migrations.php';
+                require_once __DIR__ . '/../includes/schema_comparison.php';
+                
+                // Auto-scan on page load
+                migrations_auto_scan($context['user_id']);
+                
+                // Get migration status (auto-scans internally)
+                $migrations = migrations_get_status($context['user_id']);
+                
+                // Get schema comparison
+                $schemaComparison = schema_compare();
+                
+                // Handle actions
+                $action = $_GET['action'] ?? '';
+                $message = null;
+                $messageType = 'success';
+                
+                if ($action === 'apply' && isset($_GET['filename'])) {
+                    $filename = $_GET['filename'];
+                    if (preg_match('/\.sql$/', $filename) && !preg_match('/[\/\\\\]/', $filename)) {
+                        $result = migrations_apply($filename, $context['user_id']);
+                        if ($result['success']) {
+                            $message = 'Migration applied successfully';
+                            // Reload to show updated status
+                            header('Location: /admin.php#migrations');
+                            exit;
+                        } else {
+                            $message = 'Error: ' . ($result['error'] ?? 'Unknown error');
+                            $messageType = 'danger';
+                        }
+                    }
+                } elseif ($action === 'purge' && isset($_GET['filename'])) {
+                    $filename = $_GET['filename'];
+                    if (preg_match('/\.sql$/', $filename) && !preg_match('/[\/\\\\]/', $filename)) {
+                        if (migrations_purge($filename)) {
+                            $message = 'Migration record purged';
+                            // Reload to show updated status
+                            header('Location: /admin.php#migrations');
+                            exit;
+                        } else {
+                            $message = 'Failed to purge migration record';
+                            $messageType = 'danger';
+                        }
+                    }
+                } elseif ($action === 'update_schema' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                    if (schema_update_seed_file()) {
+                        $message = 'Schema file updated successfully';
+                        // Reload to show updated comparison
+                        header('Location: /admin.php#migrations');
+                        exit;
+                    } else {
+                        $message = 'Failed to update schema file';
+                        $messageType = 'danger';
+                    }
+                }
+                ?>
+                
+                <?php if ($message): ?>
+                <div class="alert alert-<?= $messageType ?> alert-dismissible fade show mt-3" role="alert">
+                    <?= h($message) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Schema Comparison Section -->
                 <div class="card mt-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
-                        <div>
-                            <button class="btn btn-sm btn-success" onclick="scanMigrations()" title="Scan database to detect already-applied migrations">
-                                <i class="fas fa-search me-1"></i>Scan Database
+                        <h5 class="mb-0"><i class="fas fa-code-branch me-2"></i>Schema Comparison</h5>
+                        <form method="POST" action="/admin.php?action=update_schema#migrations" style="display: inline;" onsubmit="return confirm('This will update database/schema.sql to match the current database. A backup will be created. Continue?');">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="fas fa-sync me-1"></i>Update Schema File
                             </button>
-                            <button class="btn btn-sm btn-primary" onclick="loadMigrations()">
-                                <i class="fas fa-sync me-1"></i>Refresh
-                            </button>
+                        </form>
+                    </div>
+                    <div class="card-body">
+                        <?php if ($schemaComparison['matches']): ?>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Schema matches!</strong> The live database matches the schema.sql seed file.
                         </div>
+                        <?php else: ?>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Schema differences detected:</strong>
+                        </div>
+                        
+                        <?php if (!empty($schemaComparison['missing_tables'])): ?>
+                        <div class="mb-3">
+                            <h6 class="text-danger"><i class="fas fa-times-circle me-2"></i>Missing Tables (in schema.sql but not in database):</h6>
+                            <ul>
+                                <?php foreach ($schemaComparison['missing_tables'] as $table): ?>
+                                <li><code><?= h($table) ?></code></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($schemaComparison['extra_tables'])): ?>
+                        <div class="mb-3">
+                            <h6 class="text-info"><i class="fas fa-plus-circle me-2"></i>Extra Tables (in database but not in schema.sql):</h6>
+                            <ul>
+                                <?php foreach ($schemaComparison['extra_tables'] as $table): ?>
+                                <li><code><?= h($table) ?></code></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($schemaComparison['missing_columns'])): ?>
+                        <div class="mb-3">
+                            <h6 class="text-danger"><i class="fas fa-times-circle me-2"></i>Missing Columns:</h6>
+                            <ul>
+                                <?php foreach ($schemaComparison['missing_columns'] as $col): ?>
+                                <li><code><?= h($col['table']) ?>.<?= h($col['column']) ?></code></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($schemaComparison['extra_columns'])): ?>
+                        <div class="mb-3">
+                            <h6 class="text-info"><i class="fas fa-plus-circle me-2"></i>Extra Columns (in database but not in schema.sql):</h6>
+                            <ul>
+                                <?php foreach ($schemaComparison['extra_columns'] as $col): ?>
+                                <li><code><?= h($col['table']) ?>.<?= h($col['column']) ?></code></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <!-- Migrations Section -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info">
                             <h6><i class="fas fa-info-circle me-2"></i>About Migrations</h6>
-                            <p class="mb-0">Migrations are SQL scripts that modify the database schema. They are applied in order (oldest to newest) and tracked in the <code>migrations</code> table. Only pending migrations can be applied.</p>
+                            <p class="mb-0">Migrations are SQL scripts that modify the database schema. They are automatically scanned on page load to detect already-applied migrations. Only pending migrations can be applied.</p>
                         </div>
                         
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="migrationsTable">
+                            <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
                                         <th width="50">Status</th>
@@ -922,17 +1049,109 @@ ob_start();
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="migrationsTableBody">
+                                <tbody>
+                                    <?php if (empty($migrations)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center">
-                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading migrations...
+                                        <td colspan="7" class="text-center text-muted">No migration files found</td>
+                                    </tr>
+                                    <?php else: ?>
+                                    <?php foreach ($migrations as $migration): ?>
+                                    <tr>
+                                        <td>
+                                            <?php if ($migration['applied'] || $migration['detected']): ?>
+                                                <?php if ($migration['status'] === 'success'): ?>
+                                                    <span class="badge bg-success" title="Applied">
+                                                        <i class="fas fa-check"></i>
+                                                    </span>
+                                                <?php elseif ($migration['status'] === 'failed'): ?>
+                                                    <span class="badge bg-danger" title="Failed">
+                                                        <i class="fas fa-times"></i>
+                                                    </span>
+                                                <?php elseif ($migration['detected']): ?>
+                                                    <span class="badge bg-info" title="Detected as applied">
+                                                        <i class="fas fa-search"></i>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-warning" title="Partial">
+                                                        <i class="fas fa-exclamation"></i>
+                                                    </span>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary" title="Pending">
+                                                    <i class="fas fa-clock"></i>
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><code><?= h($migration['filename']) ?></code></td>
+                                        <td><?= number_format($migration['size'] / 1024, 2) ?> KB</td>
+                                        <td><?= $migration['applied_at'] ? format_datetime($migration['applied_at']) : '-' ?></td>
+                                        <td><?= $migration['applied_by'] ? 'User #' . $migration['applied_by'] : '-' ?></td>
+                                        <td><?= $migration['execution_time'] ? number_format($migration['execution_time'], 3) . 's' : '-' ?></td>
+                                        <td>
+                                            <?php if ($migration['applied'] || $migration['detected']): ?>
+                                                <a href="/admin.php?action=purge&filename=<?= urlencode($migration['filename']) ?>#migrations" 
+                                                   class="btn btn-sm btn-outline-danger" 
+                                                   onclick="return confirm('Remove this migration from tracking? This will not undo the migration, only remove the tracking record.');"
+                                                   title="Purge from tracking">
+                                                    <i class="fas fa-trash"></i> Purge
+                                                </a>
+                                            <?php else: ?>
+                                                <a href="/admin.php?action=apply&filename=<?= urlencode($migration['filename']) ?>#migrations" 
+                                                   class="btn btn-sm btn-primary"
+                                                   onclick="return confirm('Apply this migration? This will modify the database structure. Make sure you have a backup.');"
+                                                   title="Apply Migration">
+                                                    <i class="fas fa-play"></i> Apply
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="/admin.php?view=<?= urlencode($migration['filename']) ?>#migrations" 
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="View SQL">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
                                         </td>
                                     </tr>
+                                    <?php if ($migration['error_message']): ?>
+                                    <tr class="table-warning">
+                                        <td colspan="7">
+                                            <small><strong>Error:</strong> <?= h($migration['error_message']) ?></small>
+                                        </td>
+                                    </tr>
+                                    <?php endif; ?>
+                                    <?php endforeach; ?>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Migration View Modal -->
+                <?php if (isset($_GET['view'])): ?>
+                <?php
+                $viewFile = $_GET['view'];
+                if (preg_match('/\.sql$/', $viewFile) && !preg_match('/[\/\\\\]/', $viewFile)) {
+                    $content = migrations_get_content($viewFile);
+                }
+                ?>
+                <?php if (isset($content)): ?>
+                <div class="modal fade show" id="viewMigrationModal" tabindex="-1" style="display: block;">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Migration: <?= h($viewFile) ?></h5>
+                                <a href="/admin.php#migrations" class="btn-close"></a>
+                            </div>
+                            <div class="modal-body">
+                                <pre class="bg-light p-3" style="max-height: 500px; overflow-y: auto;"><code><?= h($content) ?></code></pre>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="/admin.php#migrations" class="btn btn-secondary">Close</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <?php endif; ?>
             </div>
             
             <!-- Telematics Logs Tab -->
@@ -2373,162 +2592,6 @@ ob_start();
             });
         };
         
-        // Load migrations
-        window.loadMigrations = function() {
-            $('#migrationsTableBody').html('<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Loading migrations...</td></tr>');
-            
-            $.get('/api/admin/migrations.php?action=status', function(migrations) {
-                if (migrations.length === 0) {
-                    $('#migrationsTableBody').html('<tr><td colspan="7" class="text-center text-muted">No migration files found</td></tr>');
-                    return;
-                }
-                
-                let html = '';
-                migrations.forEach(function(migration) {
-                    const statusBadge = migration.applied 
-                        ? (migration.status === 'success' 
-                            ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Applied</span>'
-                            : migration.status === 'failed'
-                            ? '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Failed</span>'
-                            : '<span class="badge bg-warning"><i class="fas fa-exclamation me-1"></i>Partial</span>')
-                        : '<span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Pending</span>';
-                    
-                    const appliedAt = migration.applied_at 
-                        ? new Date(migration.applied_at).toLocaleString() 
-                        : '-';
-                    
-                    const appliedBy = migration.applied_by 
-                        ? 'User #' + migration.applied_by 
-                        : '-';
-                    
-                    const executionTime = migration.execution_time 
-                        ? (migration.execution_time + 's') 
-                        : '-';
-                    
-                    const sizeKB = (migration.size / 1024).toFixed(2) + ' KB';
-                    
-                    const actions = migration.applied && migration.status === 'success'
-                        ? '<button class="btn btn-sm btn-outline-secondary" onclick="viewMigration(\'' + escapeHtml(migration.filename) + '\')" title="View SQL"><i class="fas fa-eye"></i></button>'
-                        : '<button class="btn btn-sm btn-primary" onclick="applyMigration(\'' + escapeHtml(migration.filename) + '\')" title="Apply Migration"><i class="fas fa-play"></i> Apply</button>' +
-                          '<button class="btn btn-sm btn-outline-secondary ms-1" onclick="viewMigration(\'' + escapeHtml(migration.filename) + '\')" title="View SQL"><i class="fas fa-eye"></i></button>';
-                    
-                    html += '<tr>' +
-                        '<td>' + statusBadge + '</td>' +
-                        '<td><code>' + escapeHtml(migration.filename) + '</code></td>' +
-                        '<td>' + sizeKB + '</td>' +
-                        '<td>' + appliedAt + '</td>' +
-                        '<td>' + appliedBy + '</td>' +
-                        '<td>' + executionTime + '</td>' +
-                        '<td>' + actions + '</td>' +
-                        '</tr>';
-                    
-                    if (migration.error_message) {
-                        html += '<tr class="table-warning">' +
-                            '<td colspan="7">' +
-                            '<small><strong>Error:</strong> ' + escapeHtml(migration.error_message) + '</small>' +
-                            '</td>' +
-                            '</tr>';
-                    }
-                });
-                
-                $('#migrationsTableBody').html(html);
-            }).fail(function(xhr) {
-                $('#migrationsTableBody').html('<tr><td colspan="7" class="text-center text-danger">Error loading migrations: ' + escapeHtml(xhr.responseJSON?.error || 'Unknown error') + '</td></tr>');
-            });
-        };
-        
-        // Apply migration
-        window.applyMigration = function(filename) {
-            if (!confirm('Are you sure you want to apply the migration "' + filename + '"?\n\nThis will modify the database structure. Make sure you have a backup.')) {
-                return;
-            }
-            
-            $.ajax({
-                url: '/api/admin/migrations.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ filename: filename }),
-                success: function(response) {
-                    alert('Migration applied successfully!\n\nExecution time: ' + response.execution_time + 's');
-                    loadMigrations();
-                },
-                error: function(xhr) {
-                    const error = xhr.responseJSON?.error || 'Unknown error';
-                    alert('Error applying migration:\n\n' + error);
-                    loadMigrations();
-                }
-            });
-        };
-        
-        // View migration content
-        window.viewMigration = function(filename) {
-            $.get('/api/admin/migrations.php?action=content&filename=' + encodeURIComponent(filename), function(data) {
-                const modal = $('<div class="modal fade" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Migration: ' + escapeHtml(filename) + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><pre class="bg-light p-3" style="max-height: 500px; overflow-y: auto;"><code>' + escapeHtml(data.content) + '</code></pre></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>');
-                $('body').append(modal);
-                new bootstrap.Modal(modal[0]).show();
-                modal.on('hidden.bs.modal', function() {
-                    modal.remove();
-                });
-            }).fail(function(xhr) {
-                alert('Error loading migration content: ' + (xhr.responseJSON?.error || 'Unknown error'));
-            });
-        };
-        
-        // Scan migrations to detect already-applied ones
-        window.scanMigrations = function() {
-            if (!confirm('This will scan the database to detect which migrations have already been applied.\n\nThis is useful if migrations were applied manually before the tracking system was set up.\n\nContinue?')) {
-                return;
-            }
-            
-            const btn = $('button:contains("Scan Database")');
-            const originalHtml = btn.html();
-            btn.prop('disabled', true);
-            btn.html('<i class="fas fa-spinner fa-spin me-1"></i>Scanning...');
-            
-            $.get('/api/admin/migrations.php?action=scan', function(result) {
-                btn.prop('disabled', false);
-                btn.html(originalHtml);
-                
-                alert('Scan complete!\n\n' +
-                    'Scanned: ' + result.scanned + ' migrations\n' +
-                    'Marked as applied: ' + result.marked + ' migrations\n\n' +
-                    'The list will now be refreshed.');
-                
-                loadMigrations();
-            }).fail(function(xhr) {
-                btn.prop('disabled', false);
-                btn.html(originalHtml);
-                const error = xhr.responseJSON?.error || 'Unknown error';
-                alert('Error scanning migrations:\n\n' + error);
-            });
-        };
-        
-        // Load migrations when tab is shown (and auto-scan if needed)
-        $('#migrations-tab').on('shown.bs.tab', function() {
-            loadMigrations();
-            
-            // Check if any migrations are marked as applied
-            // If none are, suggest scanning
-            setTimeout(function() {
-                $.get('/api/admin/migrations.php?action=status', function(migrations) {
-                    const appliedCount = migrations.filter(m => m.applied && m.status === 'success').length;
-                    const totalCount = migrations.length;
-                    
-                    // If we have migrations but none are marked as applied, suggest scanning
-                    if (totalCount > 0 && appliedCount === 0) {
-                        const shouldScan = confirm(
-                            'No migrations are currently marked as applied.\n\n' +
-                            'If you have manually applied some migrations, you can scan the database to detect them.\n\n' +
-                            'Would you like to scan now?'
-                        );
-                        
-                        if (shouldScan) {
-                            scanMigrations();
-                        }
-                    }
-                });
-            }, 500);
-        });
         
         // Test notifications function
         window.testNotifications = function() {

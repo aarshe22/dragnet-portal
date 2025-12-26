@@ -67,9 +67,13 @@ function migrations_get_applied(): array
 
 /**
  * Get migration status (all files with their applied status)
+ * Auto-scans on each call to ensure status is current
  */
-function migrations_get_status(): array
+function migrations_get_status(?int $userId = null): array
 {
+    // Auto-scan to detect already-applied migrations
+    migrations_auto_scan($userId);
+    
     $files = migrations_get_files();
     $applied = migrations_get_applied();
     
@@ -85,17 +89,21 @@ function migrations_get_status(): array
         $filename = $file['filename'];
         $isApplied = isset($appliedMap[$filename]);
         
+        // Also check if it's actually applied in the database (double-check)
+        $detectedApplied = migrations_detect_applied($filename);
+        
         $result[] = [
             'filename' => $filename,
             'path' => $file['path'],
             'size' => $file['size'],
             'modified' => $file['modified'],
-            'applied' => $isApplied,
+            'applied' => $isApplied || $detectedApplied,
+            'detected' => $detectedApplied,
             'applied_at' => $isApplied ? $appliedMap[$filename]['applied_at'] : null,
             'applied_by' => $isApplied ? $appliedMap[$filename]['applied_by'] : null,
             'execution_time' => $isApplied ? $appliedMap[$filename]['execution_time'] : null,
             'error_message' => $isApplied ? $appliedMap[$filename]['error_message'] : null,
-            'status' => $isApplied ? $appliedMap[$filename]['status'] : 'pending'
+            'status' => $isApplied ? $appliedMap[$filename]['status'] : ($detectedApplied ? 'detected' : 'pending')
         ];
     }
     
@@ -451,13 +459,11 @@ function migrations_detect_applied(string $filename): bool
 }
 
 /**
- * Scan database and mark migrations as applied if they were already applied
+ * Scan database and mark migrations as applied if they were already applied (auto-scan, no prompts)
  */
-function migrations_scan_and_mark(?int $userId = null): array
+function migrations_auto_scan(?int $userId = null): void
 {
     $files = migrations_get_files();
-    $scanned = [];
-    $marked = 0;
     
     // Ensure migrations table exists
     try {
@@ -494,7 +500,6 @@ function migrations_scan_and_mark(?int $userId = null): array
         
         // If already recorded as successful, skip
         if ($existing && $existing['status'] === 'success') {
-            $scanned[] = ['filename' => $filename, 'status' => 'already_recorded'];
             continue;
         }
         
@@ -525,17 +530,23 @@ function migrations_scan_and_mark(?int $userId = null): array
                     ['filename' => $filename, 'user_id' => $userId]
                 );
             }
-            $marked++;
-            $scanned[] = ['filename' => $filename, 'status' => 'marked_as_applied'];
-        } else {
-            $scanned[] = ['filename' => $filename, 'status' => 'not_detected'];
         }
     }
-    
-    return [
-        'scanned' => count($files),
-        'marked' => $marked,
-        'details' => $scanned
-    ];
+}
+
+/**
+ * Remove migration record (purge from tracking)
+ */
+function migrations_purge(string $filename): bool
+{
+    try {
+        $affected = db_execute(
+            "DELETE FROM migrations WHERE filename = :filename",
+            ['filename' => $filename]
+        );
+        return $affected > 0;
+    } catch (Exception $e) {
+        return false;
+    }
 }
 
