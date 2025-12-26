@@ -44,11 +44,6 @@ ob_start();
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="invites-tab" data-bs-toggle="tab" data-bs-target="#invites" type="button">
-                    <i class="fas fa-envelope me-1"></i>Invites
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices" type="button">
                     <i class="fas fa-microchip me-1"></i>Devices
                 </button>
@@ -148,39 +143,6 @@ ob_start();
                                 </thead>
                                 <tbody id="usersTableBody">
                                     <!-- Loaded via AJAX -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Invites Tab -->
-            <div class="tab-pane fade" id="invites" role="tabpanel">
-                <div class="card mt-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>User Invitations</h5>
-                        <button class="btn btn-primary btn-sm" id="btnSendInvite">
-                            <i class="fas fa-paper-plane me-1"></i>Send Invitation
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped" id="invitesTable">
-                                <thead>
-                                    <tr>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Sent</th>
-                                        <th>Expires</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="invitesTableBody">
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">Loading invites...</td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1078,8 +1040,6 @@ ob_start();
             $('#emailLogSearch').on('keyup', debounce(function() { loadEmailLogs(); }, 500));
             $('#userSearch').on('keyup', function() { loadUsers(); });
             
-            // Invites
-            $('#btnSendInvite').on('click', function() { showInviteModal(); });
             $('#deviceSearch').on('keyup', function() { loadDevices(); });
             
             // Event delegation for dynamically generated buttons
@@ -1360,15 +1320,22 @@ ob_start();
         };
         
         window.sendInviteToUser = function(userId, email) {
+            // Show loading state
+            const btn = $(`.btn-invite-user[data-id="${userId}"]`);
+            const originalHtml = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
             // Get user details to get their role
             $.get('/api/admin/users.php', function(users) {
                 const user = users.find(u => u.id === userId);
                 if (!user) {
+                    btn.prop('disabled', false).html(originalHtml);
                     alert('User not found');
                     return;
                 }
                 
                 if (!confirm(`Send invitation email to ${email}?`)) {
+                    btn.prop('disabled', false).html(originalHtml);
                     return;
                 }
                 
@@ -1382,19 +1349,24 @@ ob_start();
                         expires_in_days: 7
                     }),
                     success: function(response) {
-                        alert('Invitation sent successfully to ' + email);
-                        loadInvites(); // Refresh invites list if on that tab
+                        btn.prop('disabled', false).html(originalHtml);
+                        alert('Invitation sent successfully to ' + email + '\n\nCheck the Email Integration logs to verify delivery.');
+                        loadUsers(); // Refresh user list
                     },
                     error: function(xhr) {
+                        btn.prop('disabled', false).html(originalHtml);
                         const errorMsg = xhr.responseJSON?.error || 'Failed to send invitation';
-                        // If user already exists, still show success message as invite was created
+                        // If user already exists or pending invite, still show success message as invite was created
                         if (errorMsg.includes('already exists') || errorMsg.includes('Pending invitation')) {
-                            alert('Invitation sent to ' + email + ' (Note: User may already have an account or pending invite)');
+                            alert('Invitation sent to ' + email + ' (Note: User may already have an account or pending invite)\n\nCheck the Email Integration logs to verify delivery.');
                         } else {
-                            alert('Error: ' + errorMsg);
+                            alert('Error: ' + errorMsg + '\n\nCheck the Email Integration logs for details.');
                         }
                     }
                 });
+            }).fail(function() {
+                btn.prop('disabled', false).html(originalHtml);
+                alert('Failed to load user details');
             });
         };
         
@@ -2737,137 +2709,6 @@ ob_start();
         // Load devices when simulator tab is shown
         $(document).on('shown.bs.tab', '#simulator-tab', function() {
             loadSimulatorDevices();
-        });
-        
-        // Invite functions
-        window.loadInvites = function() {
-            $.ajax({
-                url: '/api/admin/invites.php?action=list',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    const tbody = $('#invitesTableBody');
-                    tbody.empty();
-                    
-                    if (!response.invites || response.invites.length === 0) {
-                        tbody.append('<tr><td colspan="6" class="text-center text-muted">No invitations sent</td></tr>');
-                        return;
-                    }
-                    
-                    response.invites.forEach(invite => {
-                        const status = invite.accepted_at 
-                            ? '<span class="badge bg-success">Accepted</span>'
-                            : (new Date(invite.expires_at) < new Date() 
-                                ? '<span class="badge bg-danger">Expired</span>'
-                                : '<span class="badge bg-warning">Pending</span>');
-                        
-                        const row = `
-                            <tr>
-                                <td>${escapeHtml(invite.email)}</td>
-                                <td><span class="badge bg-info">${escapeHtml(invite.role)}</span></td>
-                                <td>${formatDate(invite.created_at)}</td>
-                                <td>${formatDate(invite.expires_at)}</td>
-                                <td>${status}</td>
-                                <td>
-                                    ${!invite.accepted_at && new Date(invite.expires_at) > new Date() 
-                                        ? `<button class="btn btn-sm btn-primary" onclick="resendInvite(${invite.id})" title="Resend Invitation">
-                                                <i class="fas fa-paper-plane"></i>
-                                            </button>` 
-                                        : ''}
-                                    ${!invite.accepted_at 
-                                        ? `<button class="btn btn-sm btn-danger ms-1" onclick="deleteInvite(${invite.id})" title="Delete Invitation">
-                                                <i class="fas fa-trash"></i>
-                                            </button>` 
-                                        : ''}
-                                </td>
-                            </tr>
-                        `;
-                        tbody.append(row);
-                    });
-                },
-                error: function(xhr) {
-                    $('#invitesTableBody').html('<tr><td colspan="6" class="text-center text-danger">Error loading invites</td></tr>');
-                }
-            });
-        };
-        
-        window.showInviteModal = function() {
-            $('#inviteModalTitle').text('Send User Invitation');
-            $('#inviteForm')[0].reset();
-            $('#inviteExpiresInDays').val(7);
-            new bootstrap.Modal(document.getElementById('inviteModal')).show();
-        };
-        
-        window.sendInvite = function() {
-            const email = $('#inviteEmail').val();
-            const role = $('#inviteRole').val();
-            const expiresInDays = parseInt($('#inviteExpiresInDays').val()) || 7;
-            
-            if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                alert('Please enter a valid email address');
-                return;
-            }
-            
-            $.ajax({
-                url: '/api/admin/invites.php?action=create',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    email: email,
-                    role: role,
-                    expires_in_days: expiresInDays
-                }),
-                success: function(response) {
-                    bootstrap.Modal.getInstance(document.getElementById('inviteModal')).hide();
-                    loadInvites();
-                    alert('Invitation sent successfully to ' + email);
-                },
-                error: function(xhr) {
-                    alert('Error: ' + (xhr.responseJSON?.error || 'Failed to send invitation'));
-                }
-            });
-        };
-        
-        window.resendInvite = function(id) {
-            if (!confirm('Resend this invitation?')) {
-                return;
-            }
-            
-            $.ajax({
-                url: '/api/admin/invites.php?action=resend',
-                method: 'POST',
-                data: { id: id },
-                success: function() {
-                    alert('Invitation resent successfully');
-                    loadInvites();
-                },
-                error: function(xhr) {
-                    alert('Error: ' + (xhr.responseJSON?.error || 'Failed to resend invitation'));
-                }
-            });
-        };
-        
-        window.deleteInvite = function(id) {
-            if (!confirm('Delete this invitation?')) {
-                return;
-            }
-            
-            $.ajax({
-                url: '/api/admin/invites.php?action=delete',
-                method: 'DELETE',
-                data: { id: id },
-                success: function() {
-                    loadInvites();
-                },
-                error: function(xhr) {
-                    alert('Error: ' + (xhr.responseJSON?.error || 'Failed to delete invitation'));
-                }
-            });
-        };
-        
-        // Load invites when invites tab is shown
-        $(document).on('shown.bs.tab', '#invites-tab', function() {
-            loadInvites();
         });
         
     });
