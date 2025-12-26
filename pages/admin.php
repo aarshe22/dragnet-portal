@@ -88,6 +88,11 @@ ob_start();
                     <i class="fas fa-mobile-alt me-1"></i>PWA Installation
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="migrations-tab" data-bs-toggle="tab" data-bs-target="#migrations" type="button">
+                    <i class="fas fa-database me-1"></i>Database Migrations
+                </button>
+            </li>
         </ul>
         
         <div class="tab-content" id="adminTabContent">
@@ -879,6 +884,47 @@ ob_start();
                             <button class="btn btn-secondary" onclick="testNotifications()">
                                 <i class="fas fa-bell me-2"></i>Test Notifications
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Database Migrations Tab -->
+            <div class="tab-pane fade" id="migrations" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
+                        <button class="btn btn-sm btn-primary" onclick="loadMigrations()">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>About Migrations</h6>
+                            <p class="mb-0">Migrations are SQL scripts that modify the database schema. They are applied in order (oldest to newest) and tracked in the <code>migrations</code> table. Only pending migrations can be applied.</p>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="migrationsTable">
+                                <thead>
+                                    <tr>
+                                        <th width="50">Status</th>
+                                        <th>Filename</th>
+                                        <th>Size</th>
+                                        <th>Applied At</th>
+                                        <th>Applied By</th>
+                                        <th>Execution Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="migrationsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading migrations...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -2321,6 +2367,112 @@ ob_start();
                 }
             });
         };
+        
+        // Load migrations
+        window.loadMigrations = function() {
+            $('#migrationsTableBody').html('<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Loading migrations...</td></tr>');
+            
+            $.get('/api/admin/migrations.php?action=status', function(migrations) {
+                if (migrations.length === 0) {
+                    $('#migrationsTableBody').html('<tr><td colspan="7" class="text-center text-muted">No migration files found</td></tr>');
+                    return;
+                }
+                
+                let html = '';
+                migrations.forEach(function(migration) {
+                    const statusBadge = migration.applied 
+                        ? (migration.status === 'success' 
+                            ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Applied</span>'
+                            : migration.status === 'failed'
+                            ? '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Failed</span>'
+                            : '<span class="badge bg-warning"><i class="fas fa-exclamation me-1"></i>Partial</span>')
+                        : '<span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Pending</span>';
+                    
+                    const appliedAt = migration.applied_at 
+                        ? new Date(migration.applied_at).toLocaleString() 
+                        : '-';
+                    
+                    const appliedBy = migration.applied_by 
+                        ? 'User #' + migration.applied_by 
+                        : '-';
+                    
+                    const executionTime = migration.execution_time 
+                        ? (migration.execution_time + 's') 
+                        : '-';
+                    
+                    const sizeKB = (migration.size / 1024).toFixed(2) + ' KB';
+                    
+                    const actions = migration.applied && migration.status === 'success'
+                        ? '<button class="btn btn-sm btn-outline-secondary" onclick="viewMigration(\'' + escapeHtml(migration.filename) + '\')" title="View SQL"><i class="fas fa-eye"></i></button>'
+                        : '<button class="btn btn-sm btn-primary" onclick="applyMigration(\'' + escapeHtml(migration.filename) + '\')" title="Apply Migration"><i class="fas fa-play"></i> Apply</button>' +
+                          '<button class="btn btn-sm btn-outline-secondary ms-1" onclick="viewMigration(\'' + escapeHtml(migration.filename) + '\')" title="View SQL"><i class="fas fa-eye"></i></button>';
+                    
+                    html += '<tr>' +
+                        '<td>' + statusBadge + '</td>' +
+                        '<td><code>' + escapeHtml(migration.filename) + '</code></td>' +
+                        '<td>' + sizeKB + '</td>' +
+                        '<td>' + appliedAt + '</td>' +
+                        '<td>' + appliedBy + '</td>' +
+                        '<td>' + executionTime + '</td>' +
+                        '<td>' + actions + '</td>' +
+                        '</tr>';
+                    
+                    if (migration.error_message) {
+                        html += '<tr class="table-warning">' +
+                            '<td colspan="7">' +
+                            '<small><strong>Error:</strong> ' + escapeHtml(migration.error_message) + '</small>' +
+                            '</td>' +
+                            '</tr>';
+                    }
+                });
+                
+                $('#migrationsTableBody').html(html);
+            }).fail(function(xhr) {
+                $('#migrationsTableBody').html('<tr><td colspan="7" class="text-center text-danger">Error loading migrations: ' + escapeHtml(xhr.responseJSON?.error || 'Unknown error') + '</td></tr>');
+            });
+        };
+        
+        // Apply migration
+        window.applyMigration = function(filename) {
+            if (!confirm('Are you sure you want to apply the migration "' + filename + '"?\n\nThis will modify the database structure. Make sure you have a backup.')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/api/admin/migrations.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ filename: filename }),
+                success: function(response) {
+                    alert('Migration applied successfully!\n\nExecution time: ' + response.execution_time + 's');
+                    loadMigrations();
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Unknown error';
+                    alert('Error applying migration:\n\n' + error);
+                    loadMigrations();
+                }
+            });
+        };
+        
+        // View migration content
+        window.viewMigration = function(filename) {
+            $.get('/api/admin/migrations.php?action=content&filename=' + encodeURIComponent(filename), function(data) {
+                const modal = $('<div class="modal fade" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Migration: ' + escapeHtml(filename) + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><pre class="bg-light p-3" style="max-height: 500px; overflow-y: auto;"><code>' + escapeHtml(data.content) + '</code></pre></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>');
+                $('body').append(modal);
+                new bootstrap.Modal(modal[0]).show();
+                modal.on('hidden.bs.modal', function() {
+                    modal.remove();
+                });
+            }).fail(function(xhr) {
+                alert('Error loading migration content: ' + (xhr.responseJSON?.error || 'Unknown error'));
+            });
+        };
+        
+        // Load migrations when tab is shown
+        $('#migrations-tab').on('shown.bs.tab', function() {
+            loadMigrations();
+        });
         
         // Test notifications function
         window.testNotifications = function() {
