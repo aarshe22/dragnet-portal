@@ -98,6 +98,7 @@ $pageMap = [
     '/alerts.php' => 'alerts.php',
     '/geofences' => 'geofences.php',
     '/geofences.php' => 'geofences.php',
+    '/geofences/analytics.php' => 'geofences/analytics.php',
     '/trips' => 'trips.php',
     '/trips.php' => 'trips.php',
     '/reports' => 'reports.php',

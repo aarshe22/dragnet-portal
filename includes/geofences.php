@@ -341,3 +341,399 @@ function point_in_polygon(float $lat, float $lon, array $polygon): bool
     return $inside;
 }
 
+/**
+ * Check device position against all geofences and detect entry/exit events
+ * Called when new telemetry is received
+ */
+function geofence_check_device_position(int $deviceId, array $telemetryData): void
+{
+    $device = db_fetch_one("SELECT tenant_id FROM devices WHERE id = :id", ['id' => $deviceId]);
+    if (!$device) {
+        return;
+    }
+    
+    $tenantId = $device['tenant_id'];
+    $lat = $telemetryData['lat'] ?? null;
+    $lon = $telemetryData['lon'] ?? null;
+    $timestamp = $telemetryData['timestamp'] ?? date('Y-m-d H:i:s');
+    $telemetryId = $telemetryData['telemetry_id'] ?? null;
+    
+    if ($lat === null || $lon === null) {
+        return;
+    }
+    
+    // Get all active geofences for tenant
+    $geofences = geofence_list_all($tenantId);
+    
+    foreach ($geofences as $geofence) {
+        if (!$geofence['active']) {
+            continue;
+        }
+        
+        // Check if device is associated with this geofence (directly or via group)
+        if (!geofence_is_device_monitored($geofence['id'], $deviceId, $tenantId)) {
+            continue;
+        }
+        
+        // Check if point is inside geofence
+        $isInside = geofence_contains_point($geofence, $lat, $lon);
+        
+        // Get current state
+        $state = geofence_get_device_state($deviceId, $geofence['id'], $tenantId);
+        
+        if ($state === null) {
+            // First time checking - initialize state
+            geofence_set_device_state($deviceId, $geofence['id'], $tenantId, $isInside, $timestamp, $telemetryId);
+            
+            if ($isInside) {
+                // Device is inside on first check - create entry event
+                geofence_create_event($geofence['id'], $deviceId, $tenantId, 'entry', $lat, $lon, $telemetryData, $telemetryId);
+                geofence_create_alert($geofence['id'], $deviceId, $tenantId, 'geofence_entry', $lat, $lon, $telemetryData);
+            }
+        } else {
+            $wasInside = (bool)$state['is_inside'];
+            
+            if ($isInside && !$wasInside) {
+                // Entry event
+                geofence_create_event($geofence['id'], $deviceId, $tenantId, 'entry', $lat, $lon, $telemetryData, $telemetryId);
+                geofence_create_alert($geofence['id'], $deviceId, $tenantId, 'geofence_entry', $lat, $lon, $telemetryData);
+                geofence_set_device_state($deviceId, $geofence['id'], $tenantId, true, $timestamp, $telemetryId);
+            } elseif (!$isInside && $wasInside) {
+                // Exit event
+                geofence_create_event($geofence['id'], $deviceId, $tenantId, 'exit', $lat, $lon, $telemetryData, $telemetryId);
+                geofence_create_alert($geofence['id'], $deviceId, $tenantId, 'geofence_exit', $lat, $lon, $telemetryData);
+                geofence_set_device_state($deviceId, $geofence['id'], $tenantId, false, null, $telemetryId);
+            } elseif ($isInside && $wasInside) {
+                // Still inside - update last seen
+                geofence_update_device_state($deviceId, $geofence['id'], $tenantId, $timestamp, $telemetryId);
+            }
+        }
+    }
+}
+
+/**
+ * Check if device is monitored by geofence (directly or via group)
+ */
+function geofence_is_device_monitored(int $geofenceId, int $deviceId, int $tenantId): bool
+{
+    // Check direct device association
+    $direct = db_fetch_one(
+        "SELECT 1 FROM geofence_devices gd
+         INNER JOIN devices d ON gd.device_id = d.id
+         WHERE gd.geofence_id = :geofence_id AND gd.device_id = :device_id AND d.tenant_id = :tenant_id",
+        ['geofence_id' => $geofenceId, 'device_id' => $deviceId, 'tenant_id' => $tenantId]
+    );
+    
+    if ($direct) {
+        return true;
+    }
+    
+    // Check group association
+    require_once __DIR__ . '/device_groups.php';
+    $groups = geofence_get_groups($geofenceId, $tenantId);
+    
+    foreach ($groups as $group) {
+        $deviceInGroup = db_fetch_one(
+            "SELECT 1 FROM device_group_members dgm
+             INNER JOIN devices d ON dgm.device_id = d.id
+             WHERE dgm.group_id = :group_id AND dgm.device_id = :device_id AND d.tenant_id = :tenant_id",
+            ['group_id' => $group['id'], 'device_id' => $deviceId, 'tenant_id' => $tenantId]
+        );
+        
+        if ($deviceInGroup) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Get device geofence state
+ */
+function geofence_get_device_state(int $deviceId, int $geofenceId, int $tenantId): ?array
+{
+    return db_fetch_one(
+        "SELECT * FROM device_geofence_state 
+         WHERE device_id = :device_id AND geofence_id = :geofence_id AND tenant_id = :tenant_id",
+        ['device_id' => $deviceId, 'geofence_id' => $geofenceId, 'tenant_id' => $tenantId]
+    );
+}
+
+/**
+ * Set device geofence state
+ */
+function geofence_set_device_state(int $deviceId, int $geofenceId, int $tenantId, bool $isInside, ?string $entryTime, ?int $telemetryId): void
+{
+    $sql = "INSERT INTO device_geofence_state 
+           (tenant_id, device_id, geofence_id, is_inside, entry_time, last_seen_inside, last_telemetry_id)
+           VALUES 
+           (:tenant_id, :device_id, :geofence_id, :is_inside, :entry_time, :last_seen_inside, :last_telemetry_id)
+           ON DUPLICATE KEY UPDATE
+           is_inside = :is_inside,
+           entry_time = :entry_time,
+           last_seen_inside = :last_seen_inside,
+           last_telemetry_id = :last_telemetry_id,
+           updated_at = NOW()";
+    
+    db_execute($sql, [
+        'tenant_id' => $tenantId,
+        'device_id' => $deviceId,
+        'geofence_id' => $geofenceId,
+        'is_inside' => $isInside ? 1 : 0,
+        'entry_time' => $isInside ? $entryTime : null,
+        'last_seen_inside' => $isInside ? $entryTime : null,
+        'last_telemetry_id' => $telemetryId
+    ]);
+}
+
+/**
+ * Update device geofence state (when still inside)
+ */
+function geofence_update_device_state(int $deviceId, int $geofenceId, int $tenantId, string $timestamp, ?int $telemetryId): void
+{
+    db_execute(
+        "UPDATE device_geofence_state 
+         SET last_seen_inside = :timestamp, last_telemetry_id = :telemetry_id, updated_at = NOW()
+         WHERE device_id = :device_id AND geofence_id = :geofence_id AND tenant_id = :tenant_id",
+        [
+            'device_id' => $deviceId,
+            'geofence_id' => $geofenceId,
+            'tenant_id' => $tenantId,
+            'timestamp' => $timestamp,
+            'telemetry_id' => $telemetryId
+        ]
+    );
+}
+
+/**
+ * Create geofence event record
+ */
+function geofence_create_event(int $geofenceId, int $deviceId, int $tenantId, string $eventType, float $lat, float $lon, array $telemetryData, ?int $telemetryId): int
+{
+    $sql = "INSERT INTO geofence_events 
+           (tenant_id, geofence_id, device_id, event_type, timestamp, lat, lon, speed, heading, telemetry_id)
+           VALUES 
+           (:tenant_id, :geofence_id, :device_id, :event_type, :timestamp, :lat, :lon, :speed, :heading, :telemetry_id)";
+    
+    db_execute($sql, [
+        'tenant_id' => $tenantId,
+        'geofence_id' => $geofenceId,
+        'device_id' => $deviceId,
+        'event_type' => $eventType,
+        'timestamp' => $telemetryData['timestamp'] ?? date('Y-m-d H:i:s'),
+        'lat' => $lat,
+        'lon' => $lon,
+        'speed' => $telemetryData['speed'] ?? null,
+        'heading' => $telemetryData['heading'] ?? null,
+        'telemetry_id' => $telemetryId
+    ]);
+    
+    return (int)db_last_insert_id();
+}
+
+/**
+ * Create geofence alert
+ */
+function geofence_create_alert(int $geofenceId, int $deviceId, int $tenantId, string $alertType, float $lat, float $lon, array $telemetryData): void
+{
+    require_once __DIR__ . '/alerts.php';
+    
+    $geofence = geofence_find($geofenceId, $tenantId);
+    if (!$geofence) {
+        return;
+    }
+    
+    $device = db_fetch_one("SELECT device_uid FROM devices WHERE id = :id", ['id' => $deviceId]);
+    if (!$device) {
+        return;
+    }
+    
+    $message = sprintf(
+        'Device %s %s geofence "%s"',
+        $device['device_uid'],
+        $alertType === 'geofence_entry' ? 'entered' : 'exited',
+        $geofence['name']
+    );
+    
+    $severity = $alertType === 'geofence_entry' ? 'info' : 'warning';
+    
+    $metadata = [
+        'geofence_id' => $geofenceId,
+        'geofence_name' => $geofence['name'],
+        'lat' => $lat,
+        'lon' => $lon,
+        'speed' => $telemetryData['speed'] ?? null
+    ];
+    
+    alert_create([
+        'device_id' => $deviceId,
+        'type' => $alertType,
+        'severity' => $severity,
+        'message' => $message,
+        'metadata' => $metadata
+    ], $tenantId);
+}
+
+/**
+ * Get geofence events
+ */
+function geofence_get_events(int $geofenceId, ?int $tenantId = null, ?int $deviceId = null, ?string $startDate = null, ?string $endDate = null, int $limit = 100): array
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $where = ["ge.tenant_id = :tenant_id", "ge.geofence_id = :geofence_id"];
+    $params = ['tenant_id' => $tenantId, 'geofence_id' => $geofenceId];
+    
+    if ($deviceId) {
+        $where[] = "ge.device_id = :device_id";
+        $params['device_id'] = $deviceId;
+    }
+    
+    if ($startDate) {
+        $where[] = "DATE(ge.timestamp) >= :start_date";
+        $params['start_date'] = $startDate;
+    }
+    
+    if ($endDate) {
+        $where[] = "DATE(ge.timestamp) <= :end_date";
+        $params['end_date'] = $endDate;
+    }
+    
+    $sql = "SELECT ge.*, d.device_uid, a.name as asset_name
+            FROM geofence_events ge
+            INNER JOIN devices d ON ge.device_id = d.id
+            LEFT JOIN assets a ON d.asset_id = a.id
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY ge.timestamp DESC
+            LIMIT :limit";
+    
+    return db_fetch_all($sql, $params);
+}
+
+/**
+ * Get geofence analytics (visits, duration, frequency)
+ */
+function geofence_get_analytics(int $geofenceId, ?int $tenantId = null, ?string $startDate = null, ?string $endDate = null): array
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $where = ["ge.tenant_id = :tenant_id", "ge.geofence_id = :geofence_id"];
+    $params = ['tenant_id' => $tenantId, 'geofence_id' => $geofenceId];
+    
+    if ($startDate) {
+        $where[] = "DATE(ge.timestamp) >= :start_date";
+        $params['start_date'] = $startDate;
+    }
+    
+    if ($endDate) {
+        $where[] = "DATE(ge.timestamp) <= :end_date";
+        $params['end_date'] = $endDate;
+    }
+    
+    // Get visit statistics
+    $visits = db_fetch_all(
+        "SELECT 
+            d.id as device_id,
+            d.device_uid,
+            a.name as asset_name,
+            COUNT(CASE WHEN ge.event_type = 'entry' THEN 1 END) as entry_count,
+            COUNT(CASE WHEN ge.event_type = 'exit' THEN 1 END) as exit_count,
+            MIN(ge.timestamp) as first_visit,
+            MAX(ge.timestamp) as last_visit
+         FROM geofence_events ge
+         INNER JOIN devices d ON ge.device_id = d.id
+         LEFT JOIN assets a ON d.asset_id = a.id
+         WHERE " . implode(' AND ', $where) . "
+         GROUP BY d.id, d.device_uid, a.name
+         ORDER BY entry_count DESC",
+        $params
+    );
+    
+    // Calculate dwell times (time between entry and exit)
+    $dwellWhere = ["ge1.tenant_id = :tenant_id", "ge1.geofence_id = :geofence_id", "ge1.event_type = 'entry'"];
+    $dwellParams = ['tenant_id' => $tenantId, 'geofence_id' => $geofenceId];
+    
+    if ($startDate) {
+        $dwellWhere[] = "DATE(ge1.timestamp) >= :start_date";
+        $dwellParams['start_date'] = $startDate;
+    }
+    
+    if ($endDate) {
+        $dwellWhere[] = "DATE(ge1.timestamp) <= :end_date";
+        $dwellParams['end_date'] = $endDate;
+    }
+    
+    $dwellTimes = db_fetch_all(
+        "SELECT 
+            ge1.device_id,
+            ge1.timestamp as entry_time,
+            MIN(ge2.timestamp) as exit_time,
+            TIMESTAMPDIFF(MINUTE, ge1.timestamp, MIN(ge2.timestamp)) as dwell_minutes
+         FROM geofence_events ge1
+         INNER JOIN geofence_events ge2 ON ge1.device_id = ge2.device_id 
+             AND ge1.geofence_id = ge2.geofence_id
+             AND ge2.event_type = 'exit'
+             AND ge2.timestamp > ge1.timestamp
+         WHERE " . implode(' AND ', $dwellWhere) . "
+         GROUP BY ge1.device_id, ge1.timestamp
+         ORDER BY ge1.timestamp DESC",
+        $dwellParams
+    );
+    
+    // Calculate average dwell time per device
+    $avgDwellTimes = [];
+    foreach ($dwellTimes as $dwell) {
+        $deviceId = $dwell['device_id'];
+        if (!isset($avgDwellTimes[$deviceId])) {
+            $avgDwellTimes[$deviceId] = ['total_minutes' => 0, 'visit_count' => 0];
+        }
+        if ($dwell['dwell_minutes'] !== null) {
+            $avgDwellTimes[$deviceId]['total_minutes'] += $dwell['dwell_minutes'];
+            $avgDwellTimes[$deviceId]['visit_count']++;
+        }
+    }
+    
+    foreach ($avgDwellTimes as $deviceId => &$stats) {
+        $stats['avg_minutes'] = $stats['visit_count'] > 0 ? round($stats['total_minutes'] / $stats['visit_count'], 2) : 0;
+    }
+    
+    return [
+        'visits' => $visits,
+        'dwell_times' => $dwellTimes,
+        'avg_dwell_times' => $avgDwellTimes,
+        'total_entries' => count(array_filter($visits, function($v) { return $v['entry_count'] > 0; })),
+        'total_exits' => count(array_filter($visits, function($v) { return $v['exit_count'] > 0; }))
+    ];
+}
+
+/**
+ * Get devices currently inside geofence
+ */
+function geofence_get_devices_inside(int $geofenceId, ?int $tenantId = null): array
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $sql = "SELECT 
+                dgs.*,
+                d.device_uid,
+                d.imei,
+                a.name as asset_name,
+                TIMESTAMPDIFF(MINUTE, dgs.entry_time, NOW()) as dwell_minutes
+            FROM device_geofence_state dgs
+            INNER JOIN devices d ON dgs.device_id = d.id
+            LEFT JOIN assets a ON d.asset_id = a.id
+            WHERE dgs.geofence_id = :geofence_id 
+            AND dgs.tenant_id = :tenant_id
+            AND dgs.is_inside = 1
+            ORDER BY dgs.entry_time DESC";
+    
+    return db_fetch_all($sql, ['geofence_id' => $geofenceId, 'tenant_id' => $tenantId]);
+}
+

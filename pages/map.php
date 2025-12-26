@@ -143,6 +143,15 @@ ob_start();
             // Load geofences
             loadGeofences();
             
+            // Check if viewing specific geofence
+            const urlParams = new URLSearchParams(window.location.search);
+            const geofenceId = urlParams.get('geofence');
+            if (geofenceId) {
+                setTimeout(function() {
+                    centerOnGeofence(parseInt(geofenceId));
+                }, 1000);
+            }
+            
             // Refresh every 30 seconds
             setInterval(function() {
                 if (map) {
@@ -426,6 +435,21 @@ ob_start();
         
         window.refreshMap = function() {
             loadDevices();
+            loadGeofences();
+        };
+        
+        // Center map on specific geofence
+        function centerOnGeofence(geofenceId) {
+            const geofenceLayer = geofenceLayers[geofenceId];
+            if (geofenceLayer) {
+                map.fitBounds(geofenceLayer.getBounds());
+                geofenceLayer.openPopup();
+            }
+        }
+        
+        // View geofence analytics
+        window.viewGeofenceAnalytics = function(geofenceId) {
+            window.location.href = '/geofences/analytics.php?id=' + geofenceId;
         };
         
         // Helper function to escape HTML
@@ -595,13 +619,18 @@ ob_start();
                     }
                     
                     if (polygon) {
-                        polygon.bindPopup(`
+                        const popupContent = `
                             <div style="min-width: 200px;">
                                 <strong>${escapeHtml(geofence.name)}</strong><br>
                                 <small>Type: ${escapeHtml(geofence.type)}</small><br>
-                                <small>Status: ${geofence.active ? 'Active' : 'Inactive'}</small>
+                                <small>Status: ${geofence.active ? 'Active' : 'Inactive'}</small><br>
+                                <hr style="margin: 8px 0;">
+                                <button class="btn btn-sm btn-primary w-100" onclick="viewGeofenceAnalytics(${geofence.id})">
+                                    <i class="fas fa-chart-line me-1"></i>View Analytics
+                                </button>
                             </div>
-                        `);
+                        `;
+                        polygon.bindPopup(popupContent);
                         polygon.addTo(map);
                         geofenceLayers[geofence.id] = polygon;
                     }

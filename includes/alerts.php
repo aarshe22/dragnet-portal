@@ -108,3 +108,29 @@ function alert_count(array $filters = [], ?int $tenantId = null): int
     return (int)($result['count'] ?? 0);
 }
 
+/**
+ * Create alert
+ */
+function alert_create(array $data, ?int $tenantId = null): int
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $sql = "INSERT INTO alerts 
+            (tenant_id, device_id, type, severity, message, metadata, created_at)
+            VALUES 
+            (:tenant_id, :device_id, :type, :severity, :message, :metadata, NOW())";
+    
+    db_execute($sql, [
+        'tenant_id' => $tenantId,
+        'device_id' => $data['device_id'],
+        'type' => $data['type'],
+        'severity' => $data['severity'] ?? 'warning',
+        'message' => $data['message'] ?? null,
+        'metadata' => isset($data['metadata']) ? json_encode($data['metadata']) : null
+    ]);
+    
+    return (int)db_last_insert_id();
+}
+

@@ -67,6 +67,10 @@ function teltonika_store_telemetry(int $deviceId, array $telemetryData): bool
         require_once __DIR__ . '/trips.php';
         trip_detect_from_telemetry($deviceId, $telemetryData);
         
+        // Detect and process geofence events
+        require_once __DIR__ . '/geofences.php';
+        geofence_check_device_position($deviceId, $telemetryData);
+        
         return true;
     } catch (Exception $e) {
         error_log('Teltonika telemetry storage error: ' . $e->getMessage());

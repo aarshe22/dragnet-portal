@@ -90,6 +90,9 @@ ob_start();
                             <button class="btn btn-sm btn-primary" onclick="viewGeofence(<?= $gf['id'] ?>)" title="View on Map">
                                 <i class="fas fa-map-marker-alt"></i>
                             </button>
+                            <button class="btn btn-sm btn-info" onclick="viewGeofenceAnalytics(<?= $gf['id'] ?>)" title="View Analytics">
+                                <i class="fas fa-chart-line"></i>
+                            </button>
                             <?php if (has_role('Operator')): ?>
                             <button class="btn btn-sm btn-warning" onclick="editGeofence(<?= $gf['id'] ?>)" title="Edit">
                                 <i class="fas fa-edit"></i>
