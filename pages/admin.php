@@ -173,45 +173,6 @@ ob_start();
                 </div>
             </div>
             
-            <!-- Invite Modal -->
-            <div class="modal fade" id="inviteModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="inviteModalTitle">Send User Invitation</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="inviteForm" onsubmit="sendInvite(); return false;">
-                                <div class="mb-3">
-                                    <label class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" id="inviteEmail" required placeholder="user@example.com">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Role</label>
-                                    <select class="form-select" id="inviteRole" required>
-                                        <option value="Guest">Guest</option>
-                                        <option value="ReadOnly">ReadOnly</option>
-                                        <option value="Operator">Operator</option>
-                                        <option value="Administrator">Administrator</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Expires In (days)</label>
-                                    <input type="number" class="form-control" id="inviteExpiresInDays" value="7" min="1" max="30" required>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" onclick="sendInvite()">
-                                <i class="fas fa-paper-plane me-1"></i>Send Invitation
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Devices Tab -->
             <div class="tab-pane fade" id="devices" role="tabpanel">
                 <div class="card mt-3">
