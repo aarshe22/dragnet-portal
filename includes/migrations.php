@@ -140,28 +140,17 @@ function migrations_apply(string $filename, ?int $userId = null): array
             throw new Exception('Could not read migration file');
         }
         
-        // Split by semicolons (handle multiple statements)
-        $statements = array_filter(
-            array_map('trim', explode(';', $sql)),
-            function($stmt) {
-                return !empty($stmt) && !preg_match('/^--/', $stmt);
-            }
-        );
-        
-        // Execute each statement
-        db_get_pdo()->beginTransaction();
+        // Execute SQL (PDO is configured with MYSQL_ATTR_MULTI_STATEMENTS)
+        // Use transaction for safety
+        db_begin_transaction();
         
         try {
-            foreach ($statements as $statement) {
-                if (empty(trim($statement))) {
-                    continue;
-                }
-                db_get_pdo()->exec($statement);
-            }
+            // Execute the entire SQL file (supports multiple statements)
+            db()->exec($sql);
             
-            db_get_pdo()->commit();
+            db_commit();
         } catch (Exception $e) {
-            db_get_pdo()->rollBack();
+            db_rollback();
             throw $e;
         }
         
@@ -212,7 +201,7 @@ function migrations_apply(string $filename, ?int $userId = null): array
         
         // Ensure migrations table exists
         try {
-            db_get_pdo()->exec("
+            db()->exec("
                 CREATE TABLE IF NOT EXISTS migrations (
                     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     filename VARCHAR(255) NOT NULL UNIQUE,
@@ -472,7 +461,7 @@ function migrations_scan_and_mark(?int $userId = null): array
     
     // Ensure migrations table exists
     try {
-        db_get_pdo()->exec("
+        db()->exec("
             CREATE TABLE IF NOT EXISTS migrations (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 filename VARCHAR(255) NOT NULL UNIQUE,
