@@ -524,10 +524,10 @@ function migrations_auto_scan(?int $userId = null): void
                      VALUES (:filename, NOW(), :user_id, 'success')
                      ON DUPLICATE KEY UPDATE 
                      applied_at = NOW(), 
-                     applied_by = :user_id, 
+                     applied_by = :user_id2, 
                      status = 'success',
                      error_message = NULL",
-                    ['filename' => $filename, 'user_id' => $userId]
+                    ['filename' => $filename, 'user_id' => $userId, 'user_id2' => $userId]
                 );
             }
         }

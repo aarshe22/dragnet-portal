@@ -895,11 +895,14 @@ ob_start();
                 require_once __DIR__ . '/../includes/migrations.php';
                 require_once __DIR__ . '/../includes/schema_comparison.php';
                 
+                // Get current user ID from session
+                $userId = session_get('user_id');
+                
                 // Auto-scan on page load
-                migrations_auto_scan($context['user_id']);
+                migrations_auto_scan($userId);
                 
                 // Get migration status (auto-scans internally)
-                $migrations = migrations_get_status($context['user_id']);
+                $migrations = migrations_get_status($userId);
                 
                 // Get schema comparison
                 $schemaComparison = schema_compare();
@@ -912,7 +915,7 @@ ob_start();
                 if ($action === 'apply' && isset($_GET['filename'])) {
                     $filename = $_GET['filename'];
                     if (preg_match('/\.sql$/', $filename) && !preg_match('/[\/\\\\]/', $filename)) {
-                        $result = migrations_apply($filename, $context['user_id']);
+                        $result = migrations_apply($filename, $userId);
                         if ($result['success']) {
                             $message = 'Migration applied successfully';
                             // Reload to show updated status

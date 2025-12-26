@@ -36,7 +36,21 @@ function alert_list_all(array $filters = [], ?int $tenantId = null): array
     }
     
     // Support filtering by asset_id or device_id
-    if (isset($filters['asset_id'])) {
+    // Check if asset_id column exists in alerts table
+    $hasAssetId = false;
+    try {
+        $columnCheck = db_fetch_one(
+            "SELECT 1 FROM information_schema.columns 
+             WHERE table_schema = DATABASE() 
+             AND table_name = 'alerts' 
+             AND column_name = 'asset_id'"
+        );
+        $hasAssetId = (bool)$columnCheck;
+    } catch (Exception $e) {
+        // Column doesn't exist yet
+    }
+    
+    if (isset($filters['asset_id']) && $hasAssetId) {
         $where[] = "a.asset_id = :asset_id";
         $params['asset_id'] = $filters['asset_id'];
     }
@@ -46,12 +60,17 @@ function alert_list_all(array $filters = [], ?int $tenantId = null): array
         $params['device_id'] = $filters['device_id'];
     }
     
+    // Build JOIN condition for assets based on whether asset_id column exists
+    $assetJoinCondition = $hasAssetId 
+        ? "(a.asset_id = ast.id OR d.asset_id = ast.id)"
+        : "d.asset_id = ast.id";
+    
     $sql = "SELECT a.*, 
                    d.device_uid, d.imei,
                    ast.name as asset_name, ast.id as asset_id_display
             FROM alerts a
             LEFT JOIN devices d ON a.device_id = d.id
-            LEFT JOIN assets ast ON (a.asset_id = ast.id OR d.asset_id = ast.id)
+            LEFT JOIN assets ast ON {$assetJoinCondition}
             WHERE " . implode(' AND ', $where) . "
             ORDER BY a.created_at DESC";
     
