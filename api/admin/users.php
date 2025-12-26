@@ -57,7 +57,8 @@ switch ($method) {
         break;
         
     case 'DELETE':
-        $id = (int)input('id');
+        // Check both GET parameter and request body for DELETE requests
+        $id = (int)($_GET['id'] ?? input('id') ?? 0);
         if (!$id) {
             json_response(['error' => 'ID required'], 400);
         }

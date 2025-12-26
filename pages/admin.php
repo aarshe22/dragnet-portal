@@ -1272,10 +1272,13 @@ ob_start();
                             <td><span class="badge bg-info">${escapeHtml(user.role)}</span></td>
                             <td>${user.last_login ? formatDate(user.last_login) : 'Never'}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary btn-edit-user" data-id="${user.id}">
+                                <button class="btn btn-sm btn-primary btn-edit-user" data-id="${user.id}" title="Edit User">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger btn-delete-user" data-id="${user.id}">
+                                <button class="btn btn-sm btn-success btn-invite-user" data-id="${user.id}" data-email="${escapeHtml(user.email)}" title="Send Invitation">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-delete-user" data-id="${user.id}" title="Delete User">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -1345,15 +1348,53 @@ ob_start();
             }
             
             $.ajax({
-                url: '/api/admin/users.php',
+                url: '/api/admin/users.php?id=' + id,
                 method: 'DELETE',
-                data: { id: id },
                 success: function() {
                     loadUsers();
                 },
                 error: function(xhr) {
                     alert('Error: ' + (xhr.responseJSON?.error || 'Unknown error'));
                 }
+            });
+        };
+        
+        window.sendInviteToUser = function(userId, email) {
+            // Get user details to get their role
+            $.get('/api/admin/users.php', function(users) {
+                const user = users.find(u => u.id === userId);
+                if (!user) {
+                    alert('User not found');
+                    return;
+                }
+                
+                if (!confirm(`Send invitation email to ${email}?`)) {
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/api/admin/invites.php?action=create',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        email: email,
+                        role: user.role,
+                        expires_in_days: 7
+                    }),
+                    success: function(response) {
+                        alert('Invitation sent successfully to ' + email);
+                        loadInvites(); // Refresh invites list if on that tab
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.error || 'Failed to send invitation';
+                        // If user already exists, still show success message as invite was created
+                        if (errorMsg.includes('already exists') || errorMsg.includes('Pending invitation')) {
+                            alert('Invitation sent to ' + email + ' (Note: User may already have an account or pending invite)');
+                        } else {
+                            alert('Error: ' + errorMsg);
+                        }
+                    }
+                });
             });
         };
         

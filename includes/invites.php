@@ -101,12 +101,33 @@ function invite_accept(string $token, string $ssoProvider = 'invite', string $ss
     
     // Check if user already exists
     $existingUser = db_fetch_one(
-        "SELECT id FROM users WHERE email = :email AND tenant_id = :tenant_id",
+        "SELECT * FROM users WHERE email = :email AND tenant_id = :tenant_id",
         ['email' => $invite['email'], 'tenant_id' => $invite['tenant_id']]
     );
     
     if ($existingUser) {
-        throw new Exception('User with this email already exists');
+        // User already exists - update role if different and mark invite as accepted
+        if ($existingUser['role'] !== $invite['role']) {
+            db_execute(
+                "UPDATE users SET role = :role WHERE id = :id",
+                ['role' => $invite['role'], 'id' => $existingUser['id']]
+            );
+            $existingUser['role'] = $invite['role'];
+        }
+        
+        // Mark invite as accepted
+        db_execute(
+            "UPDATE user_invites SET accepted_at = NOW() WHERE id = :id",
+            ['id' => $invite['id']]
+        );
+        
+        // Return existing user data
+        return [
+            'id' => $existingUser['id'],
+            'tenant_id' => $existingUser['tenant_id'],
+            'email' => $existingUser['email'],
+            'role' => $existingUser['role']
+        ];
     }
     
     // Generate SSO subject if not provided

@@ -73,8 +73,8 @@ ob_start();
                     <?php if ($success): ?>
                         <div class="alert alert-success text-center">
                             <i class="fas fa-check-circle fa-3x mb-3"></i>
-                            <h4>Account Created Successfully!</h4>
-                            <p>You have been registered and logged in. Redirecting to dashboard...</p>
+                            <h4>Invitation Accepted Successfully!</h4>
+                            <p>You have been logged in. Redirecting to dashboard...</p>
                         </div>
                     <?php elseif ($error): ?>
                         <div class="alert alert-danger">
@@ -102,7 +102,7 @@ ob_start();
                             <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-check me-2"></i>Accept Invitation & Create Account
+                                    <i class="fas fa-check me-2"></i>Accept Invitation
                                 </button>
                             </div>
                         </form>
