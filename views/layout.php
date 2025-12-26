@@ -78,7 +78,7 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto d-flex flex-row align-items-center">
+                <ul class="navbar-nav me-auto d-flex flex-row align-items-center navbar-nav-collapsed">
                     <li class="nav-item">
                         <a class="nav-link nav-icon-link <?= get_current_page() === 'dashboard' ? 'active' : '' ?>" href="/dashboard.php" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Dashboard - View overview and statistics">
                             <i class="fas fa-home fa-lg"></i>
@@ -150,8 +150,8 @@
                 
                 <ul class="navbar-nav d-flex flex-row align-items-center">
                     <!-- PWA Install Button -->
-                    <li class="nav-item" id="pwaInstallContainer" style="display: none;">
-                        <button class="btn btn-outline-light btn-sm ms-2 nav-icon-link" id="pwaInstallButton" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Install App - Add to home screen">
+                    <li class="nav-item" id="pwaInstallContainer">
+                        <button class="btn btn-outline-light btn-sm ms-2 nav-icon-link" id="pwaInstallButton" data-bs-toggle="modal" data-bs-target="#pwaInstallModal" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Install App - Add to home screen">
                             <i class="fas fa-download fa-lg"></i>
                             <span class="nav-icon-label d-lg-none">Install</span>
                         </button>
@@ -277,6 +277,122 @@
     </div>
     <?php endif; ?>
     
+    <!-- PWA Install Modal with Platform-Specific Instructions -->
+    <div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-labelledby="pwaInstallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%); border-bottom: 2px solid var(--dragnet-badge-gold);">
+                    <h5 class="modal-title" id="pwaInstallModalLabel" style="font-family: var(--dragnet-typewriter); letter-spacing: 1px; text-transform: uppercase; color: var(--dragnet-white);">
+                        <i class="fas fa-mobile-alt me-2" style="color: var(--dragnet-badge-gold);"></i>Install Dragnet Intelematics
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="background: var(--dragnet-white); padding: 2rem;">
+                    <!-- Auto-install section (Chrome/Edge/Android) -->
+                    <div id="autoInstallSection" style="display: none;">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-download fa-3x mb-3" style="color: var(--dragnet-badge-gold);"></i>
+                            <h5 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary);">Install Dragnet Intelematics</h5>
+                            <p style="color: var(--dragnet-text-secondary);">Get quick access from your home screen. Works offline and loads faster.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 mb-3" id="autoInstallButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px; padding: 1rem;">
+                            <i class="fas fa-download me-2"></i>Install Now
+                        </button>
+                    </div>
+                    
+                    <!-- Platform-specific instructions -->
+                    <div id="platformInstructions" style="display: none;">
+                        <div id="iosInstructions" style="display: none;">
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="fab fa-apple me-2"></i>Install on iOS (Safari)</h6>
+                                <ol class="mb-0">
+                                    <li>Tap the <strong>Share</strong> button <i class="fas fa-share-square"></i> at the bottom of the screen</li>
+                                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                                    <li>Tap <strong>"Add"</strong> in the top right corner</li>
+                                    <li>The app will appear on your home screen</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div id="androidInstructions" style="display: none;">
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="fab fa-android me-2"></i>Install on Android (Chrome)</h6>
+                                <ol class="mb-0">
+                                    <li>Tap the <strong>Menu</strong> button <i class="fas fa-ellipsis-v"></i> (three dots) in the top right</li>
+                                    <li>Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
+                                    <li>Tap <strong>"Add"</strong> or <strong>"Install"</strong> in the popup</li>
+                                    <li>The app will appear on your home screen</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div id="windowsInstructions" style="display: none;">
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="fab fa-windows me-2"></i>Install on Windows (Edge/Chrome)</h6>
+                                <ol class="mb-0">
+                                    <li>Click the <strong>Install</strong> icon <i class="fas fa-plus-circle"></i> in the address bar</li>
+                                    <li>Or click the <strong>Menu</strong> button <i class="fas fa-ellipsis-v"></i> and select <strong>"Apps"</strong> → <strong>"Install this site as an app"</strong></li>
+                                    <li>Click <strong>"Install"</strong> in the dialog</li>
+                                    <li>The app will open in its own window</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div id="macosInstructions" style="display: none;">
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="fab fa-apple me-2"></i>Install on macOS (Safari/Chrome)</h6>
+                                <h6 class="mt-3">Safari:</h6>
+                                <ol class="mb-3">
+                                    <li>Click <strong>File</strong> → <strong>"Add to Dock"</strong></li>
+                                    <li>The app will appear in your Dock</li>
+                                </ol>
+                                <h6>Chrome/Edge:</h6>
+                                <ol class="mb-0">
+                                    <li>Click the <strong>Install</strong> icon <i class="fas fa-plus-circle"></i> in the address bar</li>
+                                    <li>Or click the <strong>Menu</strong> button and select <strong>"Install Dragnet Intelematics..."</strong></li>
+                                    <li>Click <strong>"Install"</strong> in the dialog</li>
+                                    <li>The app will open in its own window</li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <div id="chromeInstructions" style="display: none;">
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="fab fa-chrome me-2"></i>Install on Chrome/Chromium/Edge</h6>
+                                <ol class="mb-0">
+                                    <li>Look for the <strong>Install</strong> icon <i class="fas fa-plus-circle"></i> in the address bar</li>
+                                    <li>Click it and select <strong>"Install"</strong></li>
+                                    <li>Or go to <strong>Menu</strong> <i class="fas fa-ellipsis-v"></i> → <strong>"Install Dragnet Intelematics..."</strong></li>
+                                    <li>The app will open in its own window</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Benefits section -->
+                    <div class="mt-4 pt-4 border-top">
+                        <h6 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary); margin-bottom: 1rem;">
+                            <i class="fas fa-star me-2" style="color: var(--dragnet-badge-gold);"></i>Benefits:
+                        </h6>
+                        <ul style="color: var(--dragnet-text-secondary);">
+                            <li>Quick access from your home screen</li>
+                            <li>Works offline with cached data</li>
+                            <li>Faster loading times</li>
+                            <li>GPS location tracking</li>
+                            <li>Push notifications for alerts</li>
+                            <li>Native app-like experience</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: var(--dragnet-cream); border-top: 2px solid var(--dragnet-gray);">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Footer -->
     <?php if ($shouldShowNav): ?>
     <footer class="bg-light mt-5 py-3">
@@ -343,6 +459,102 @@
             });
         }
         
+        // Platform detection
+        function detectPlatform() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+            const isAndroid = /android/i.test(userAgent);
+            const isWindows = /windows/i.test(userAgent);
+            const isMacOS = /macintosh|mac os x/i.test(userAgent);
+            const isChrome = /chrome/i.test(userAgent) && !/edge/i.test(userAgent);
+            const isEdge = /edge/i.test(userAgent);
+            const isSafari = /safari/i.test(userAgent) && !/chrome/i.test(userAgent);
+            
+            return {
+                isIOS,
+                isAndroid,
+                isWindows,
+                isMacOS,
+                isChrome,
+                isEdge,
+                isSafari,
+                isMobile: isIOS || isAndroid,
+                isDesktop: isWindows || isMacOS
+            };
+        }
+        
+        // Show platform-specific instructions
+        function showPlatformInstructions() {
+            const platform = detectPlatform();
+            const instructionsDiv = document.getElementById('platformInstructions');
+            const autoInstallDiv = document.getElementById('autoInstallSection');
+            
+            if (instructionsDiv) {
+                instructionsDiv.style.display = 'block';
+                autoInstallDiv.style.display = 'none';
+                
+                // Hide all instructions first
+                document.getElementById('iosInstructions').style.display = 'none';
+                document.getElementById('androidInstructions').style.display = 'none';
+                document.getElementById('windowsInstructions').style.display = 'none';
+                document.getElementById('macosInstructions').style.display = 'none';
+                document.getElementById('chromeInstructions').style.display = 'none';
+                
+                // Show appropriate instructions
+                if (platform.isIOS) {
+                    document.getElementById('iosInstructions').style.display = 'block';
+                } else if (platform.isAndroid) {
+                    document.getElementById('androidInstructions').style.display = 'block';
+                } else if (platform.isWindows) {
+                    document.getElementById('windowsInstructions').style.display = 'block';
+                } else if (platform.isMacOS) {
+                    document.getElementById('macosInstructions').style.display = 'block';
+                } else if (platform.isChrome || platform.isEdge) {
+                    document.getElementById('chromeInstructions').style.display = 'block';
+                }
+            }
+        }
+        
+        // Request permissions after installation
+        async function requestPermissionsAfterInstall() {
+            // Request GPS location permission
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    () => console.log('GPS permission granted'),
+                    () => console.log('GPS permission denied'),
+                    { timeout: 1000 }
+                );
+            }
+            
+            // Request push notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted' && typeof DragNet !== 'undefined' && DragNet.subscribePush) {
+                        // Get VAPID key
+                        try {
+                            const response = await fetch('/api/push/vapid-key.php');
+                            const data = await response.json();
+                            if (data.publicKey) {
+                                DragNet.config.vapidPublicKey = data.publicKey;
+                            }
+                        } catch (e) {
+                            console.log('Could not fetch VAPID key');
+                        }
+                        
+                        // Subscribe to push notifications
+                        DragNet.subscribePush().then(() => {
+                            console.log('Push notifications enabled');
+                        }).catch(err => {
+                            console.error('Push subscription error:', err);
+                        });
+                    }
+                } catch (err) {
+                    console.error('Error requesting notification permission:', err);
+                }
+            }
+        }
+        
         // PWA Install Prompt Handler
         window.addEventListener('beforeinstallprompt', (e) => {
             // Prevent the mini-infobar from appearing on mobile
@@ -354,11 +566,32 @@
             installButton = document.getElementById('pwaInstallButton');
             if (installContainer && installButton) {
                 installContainer.style.display = 'block';
-                
-                installButton.addEventListener('click', async () => {
+            }
+        });
+        
+        // Handle install button click
+        document.addEventListener('DOMContentLoaded', function() {
+            const installButton = document.getElementById('pwaInstallButton');
+            const autoInstallButton = document.getElementById('autoInstallButton');
+            const installModal = document.getElementById('pwaInstallModal');
+            
+            if (installButton) {
+                installButton.addEventListener('click', function(e) {
+                    // If we have deferredPrompt, show auto-install section
+                    if (deferredPrompt) {
+                        document.getElementById('autoInstallSection').style.display = 'block';
+                        document.getElementById('platformInstructions').style.display = 'none';
+                    } else {
+                        // Show platform-specific instructions
+                        showPlatformInstructions();
+                    }
+                });
+            }
+            
+            if (autoInstallButton) {
+                autoInstallButton.addEventListener('click', async function() {
                     if (!deferredPrompt) {
-                        // Fallback for browsers that don't support beforeinstallprompt
-                        showInstallInstructions();
+                        showPlatformInstructions();
                         return;
                     }
                     
@@ -369,12 +602,32 @@
                     const { outcome } = await deferredPrompt.userChoice;
                     console.log(`User response to install prompt: ${outcome}`);
                     
+                    if (outcome === 'accepted') {
+                        // Request permissions after successful installation
+                        setTimeout(() => {
+                            requestPermissionsAfterInstall();
+                        }, 1000);
+                        
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(installModal);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        
+                        // Show success message
+                        alert('App installed successfully! GPS and push notifications will be requested.');
+                    }
+                    
                     // Clear the deferredPrompt
                     deferredPrompt = null;
-                    
-                    // Hide the install button
-                    if (installContainer) {
-                        installContainer.style.display = 'none';
+                });
+            }
+            
+            // Show platform instructions when modal opens if no deferredPrompt
+            if (installModal) {
+                installModal.addEventListener('show.bs.modal', function() {
+                    if (!deferredPrompt) {
+                        showPlatformInstructions();
                     }
                 });
             }
@@ -383,6 +636,9 @@
         // Hide install button if app is already installed
         window.addEventListener('appinstalled', () => {
             console.log('PWA was installed');
+            // Request permissions after installation
+            requestPermissionsAfterInstall();
+            
             if (installContainer) {
                 installContainer.style.display = 'none';
             }
@@ -398,6 +654,13 @@
             // App is already installed
             if (installContainer) {
                 installContainer.style.display = 'none';
+            }
+        } else {
+            // Show install button even if beforeinstallprompt hasn't fired yet
+            // (for platforms that don't support it, like iOS)
+            installContainer = document.getElementById('pwaInstallContainer');
+            if (installContainer) {
+                installContainer.style.display = 'block';
             }
         }
         

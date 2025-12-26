@@ -135,22 +135,30 @@ small.text-muted {
     }
 }
 
-/* Mobile: Show labels and use standard menu */
+/* Mobile: Hide icon-only buttons, show only in hamburger menu */
 @media (max-width: 991px) {
-    .navbar-nav {
+    /* Hide icon-only navigation buttons on mobile - they'll show in hamburger menu */
+    .navbar-nav.d-flex.flex-row .nav-icon-link {
+        display: none !important;
+    }
+    
+    /* Show full menu items in hamburger menu (when collapsed menu is shown) */
+    .navbar-collapse .navbar-nav {
         flex-direction: column;
         width: 100%;
     }
     
-    .nav-icon-link {
+    .navbar-collapse .nav-icon-link {
         width: 100%;
         justify-content: flex-start;
         padding: 0.75rem 1rem !important;
+        display: flex !important;
     }
     
-    .nav-icon-link i {
+    .navbar-collapse .nav-icon-link i {
         width: 24px;
         text-align: center;
+        margin-right: 0.5rem;
     }
     
     .navbar-toggler {
