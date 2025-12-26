@@ -1,4 +1,5 @@
 SET FOREIGN_KEY_CHECKS = 0;
+
 CREATE TABLE IF NOT EXISTS email_logs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id INT UNSIGNED NULL,
@@ -17,4 +18,5 @@ CREATE TABLE IF NOT EXISTS email_logs (
     INDEX idx_created (created_at),
     INDEX idx_provider (provider)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-SET FOREIGN_KEY_CHECKS = 1
+
+SET FOREIGN_KEY_CHECKS = 1;

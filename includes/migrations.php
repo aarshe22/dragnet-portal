@@ -153,8 +153,50 @@ function migrations_apply(string $filename, ?int $userId = null): array
         db_begin_transaction();
         
         try {
-            // Execute the entire SQL file (supports multiple statements)
-            db()->exec($sql);
+            // Split SQL into individual statements and execute them one by one
+            // This allows us to handle errors for individual statements (like duplicate indexes)
+            $statements = array_filter(
+                array_map('trim', preg_split('/;\s*(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $sql)),
+                function($stmt) {
+                    return !empty($stmt) && !preg_match('/^--/', $stmt) && !preg_match('/^SET\s+/i', $stmt);
+                }
+            );
+            
+            // Execute SET statements first (they don't need error handling)
+            if (preg_match('/SET\s+FOREIGN_KEY_CHECKS\s*=\s*0/i', $sql)) {
+                db()->exec("SET FOREIGN_KEY_CHECKS = 0");
+            }
+            
+            // Execute each statement, ignoring errors for duplicate indexes/columns
+            foreach ($statements as $statement) {
+                try {
+                    db()->exec($statement);
+                } catch (Exception $e) {
+                    $errorMsg = $e->getMessage();
+                    // Ignore errors for:
+                    // - Duplicate key/index names (1061)
+                    // - Duplicate column names (1060)
+                    // - Missing columns/indexes that we're trying to drop (1054)
+                    // - Tables that already exist (1050)
+                    if (strpos($errorMsg, 'Duplicate key name') !== false ||
+                        strpos($errorMsg, 'Duplicate column name') !== false ||
+                        strpos($errorMsg, "doesn't exist") !== false ||
+                        strpos($errorMsg, "already exists") !== false ||
+                        strpos($errorMsg, 'Duplicate entry') !== false ||
+                        preg_match('/SQLSTATE\[42S21\].*Duplicate column/', $errorMsg) ||
+                        preg_match('/SQLSTATE\[42S01\].*already exists/', $errorMsg)) {
+                        // Index/column/table already exists or doesn't exist - that's okay
+                        continue;
+                    }
+                    // Re-throw other errors
+                    throw $e;
+                }
+            }
+            
+            // Restore foreign key checks
+            if (preg_match('/SET\s+FOREIGN_KEY_CHECKS\s*=\s*1/i', $sql)) {
+                db()->exec("SET FOREIGN_KEY_CHECKS = 1");
+            }
             
             db_commit();
         } catch (Exception $e) {

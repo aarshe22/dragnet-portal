@@ -12,9 +12,11 @@ SET d.asset_id = a.id
 WHERE d.asset_id IS NULL OR d.asset_id = 0;
 
 -- Step 2: Remove the device_id column and its index from assets table
+-- Note: DROP INDEX and DROP COLUMN don't support IF EXISTS in MariaDB
+-- The migration execution will handle errors gracefully if they don't exist
 ALTER TABLE `assets` 
-DROP INDEX IF EXISTS `idx_device`,
-DROP COLUMN IF EXISTS `device_id`;
+DROP INDEX `idx_device`,
+DROP COLUMN `device_id`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
