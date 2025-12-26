@@ -1,6 +1,6 @@
-const CACHE_NAME = 'dragnet-v1';
+const CACHE_NAME = 'dragnet-v3';
 const OFFLINE_URL = '/public/offline.html';
-const RUNTIME_CACHE = 'dragnet-runtime-v1';
+const RUNTIME_CACHE = 'dragnet-runtime-v3';
 
 // Assets to cache on install
 const STATIC_CACHE_URLS = [
@@ -56,10 +56,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     
-    // Don't cache API requests - always fetch from network
-    if (url.pathname.startsWith('/api/')) {
+    // Don't cache API requests or admin.php - always fetch from network
+    if (url.pathname.startsWith('/api/') || url.pathname.includes('/admin.php')) {
         event.respondWith(
-            fetch(event.request).catch((error) => {
+            fetch(event.request, { cache: 'no-store' }).catch((error) => {
                 // Return a proper error response instead of undefined
                 return new Response(JSON.stringify({ error: 'Network error' }), {
                     status: 503,
@@ -74,7 +74,7 @@ self.addEventListener('fetch', (event) => {
     // Handle navigation requests
     if (event.request.mode === 'navigate') {
         event.respondWith(
-            fetch(event.request).catch(() => {
+            fetch(event.request, { cache: 'no-store' }).catch(() => {
                 return caches.match(OFFLINE_URL).then((response) => {
                     return response || new Response('Offline', { status: 503 });
                 });
