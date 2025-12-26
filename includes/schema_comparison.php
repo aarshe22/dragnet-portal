@@ -46,13 +46,15 @@ function schema_get_current(): array
         
         // Get constraints
         $constraints = db_fetch_all(
-            "SELECT constraint_name, constraint_type, column_name, referenced_table_name, referenced_column_name
+            "SELECT tc.constraint_name, tc.constraint_type, kcu.column_name, kcu.referenced_table_name, kcu.referenced_column_name
              FROM information_schema.table_constraints tc
              LEFT JOIN information_schema.key_column_usage kcu 
                 ON tc.constraint_name = kcu.constraint_name 
                 AND tc.table_schema = kcu.table_schema
+                AND tc.table_name = kcu.table_name
              WHERE tc.table_schema = DATABASE() 
-             AND tc.table_name = :table_name",
+             AND tc.table_name = :table_name
+             ORDER BY tc.constraint_name, kcu.ordinal_position",
             ['table_name' => $tableName]
         );
         
