@@ -80,7 +80,57 @@ switch ($method) {
             json_response(['error' => 'Geofence ID required'], 400);
         }
         
-        if (geofence_update($geofenceId, $data, $tenantId)) {
+        // Extract device/group associations if provided
+        $deviceIds = $data['device_ids'] ?? null;
+        $groupIds = $data['group_ids'] ?? null;
+        
+        // Remove device_ids and group_ids from data before updating geofence
+        $updateData = $data;
+        unset($updateData['device_ids'], $updateData['group_ids']);
+        
+        if (geofence_update($geofenceId, $updateData, $tenantId)) {
+            // Update device associations if provided
+            if ($deviceIds !== null && is_array($deviceIds)) {
+                // Get current devices
+                $currentDevices = geofence_get_devices($geofenceId, $tenantId);
+                $currentDeviceIds = array_map(function($d) { return $d['id']; }, $currentDevices);
+                
+                // Remove devices not in new list
+                foreach ($currentDeviceIds as $deviceId) {
+                    if (!in_array($deviceId, $deviceIds)) {
+                        geofence_remove_device($geofenceId, $deviceId, $tenantId);
+                    }
+                }
+                
+                // Add new devices
+                foreach ($deviceIds as $deviceId) {
+                    if (!in_array($deviceId, $currentDeviceIds)) {
+                        geofence_add_device($geofenceId, (int)$deviceId, $tenantId);
+                    }
+                }
+            }
+            
+            // Update group associations if provided
+            if ($groupIds !== null && is_array($groupIds)) {
+                // Get current groups
+                $currentGroups = geofence_get_groups($geofenceId, $tenantId);
+                $currentGroupIds = array_map(function($g) { return $g['id']; }, $currentGroups);
+                
+                // Remove groups not in new list
+                foreach ($currentGroupIds as $groupId) {
+                    if (!in_array($groupId, $groupIds)) {
+                        geofence_remove_group($geofenceId, $groupId, $tenantId);
+                    }
+                }
+                
+                // Add new groups
+                foreach ($groupIds as $groupId) {
+                    if (!in_array($groupId, $currentGroupIds)) {
+                        geofence_add_group($geofenceId, (int)$groupId, $tenantId);
+                    }
+                }
+            }
+            
             json_response(['success' => true, 'message' => 'Geofence updated']);
         } else {
             json_response(['error' => 'Failed to update geofence'], 500);

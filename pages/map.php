@@ -36,6 +36,11 @@ ob_start();
                 <option value="">Select Device...</option>
             </select>
         </div>
+        <?php if (has_role('Operator')): ?>
+        <button class="btn btn-success me-2" onclick="toggleGeofenceDrawing()" id="geofenceDrawButton" title="Draw Geofence">
+            <i class="fas fa-draw-polygon me-1"></i>Draw Geofence
+        </button>
+        <?php endif; ?>
         <button class="btn btn-outline-primary me-2" onclick="centerOnLocation()" id="locationButton" title="Center on my location">
             <i class="fas fa-crosshairs me-1"></i>My Location
         </button>
@@ -50,6 +55,62 @@ ob_start();
         <div id="map" style="height: 600px;"></div>
     </div>
 </div>
+
+<!-- Geofence Creation Modal -->
+<?php if (has_role('Operator')): ?>
+<div class="modal fade" id="geofenceModal" tabindex="-1" aria-labelledby="geofenceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="geofenceModalLabel"><i class="fas fa-draw-polygon me-2"></i>Create Geofence</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="geofenceForm">
+                    <input type="hidden" id="geofenceId" name="id">
+                    <input type="hidden" id="geofenceCoordinates" name="coordinates">
+                    
+                    <div class="mb-3">
+                        <label for="geofenceName" class="form-label">Geofence Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="geofenceName" name="name" required placeholder="Enter geofence name">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Associate with Devices</label>
+                        <select class="form-select" id="geofenceDevices" name="device_ids[]" multiple size="5">
+                            <option value="">Loading devices...</option>
+                        </select>
+                        <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple devices</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Associate with Device Groups</label>
+                        <select class="form-select" id="geofenceGroups" name="group_ids[]" multiple size="5">
+                            <option value="">Loading groups...</option>
+                        </select>
+                        <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple groups</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="geofenceActive" name="active" checked>
+                            <label class="form-check-label" for="geofenceActive">
+                                Active (Geofence is enabled)
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveGeofence()">
+                    <i class="fas fa-save me-1"></i>Save Geofence
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <script>
 // Wait for jQuery and Leaflet to be loaded
@@ -71,9 +132,16 @@ ob_start();
         let deviceMarkers = {};
         let userLocationMarker = null;
         let userLocation = null;
+        let drawnItems = new L.FeatureGroup();
+        let drawControl = null;
+        let isDrawingMode = false;
+        let geofenceLayers = {};
         
         $(document).ready(function() {
             initMap();
+            
+            // Load geofences
+            loadGeofences();
             
             // Refresh every 30 seconds
             setInterval(function() {
@@ -192,6 +260,9 @@ ob_start();
                     // Add tile layer
                     addTileLayer(provider);
                     
+                    // Initialize drawing controls
+                    initDrawingControls();
+                    
                     // Load devices after map is initialized
                     loadDevices();
                 }).catch(function(error) {
@@ -201,6 +272,9 @@ ob_start();
                     
                     // Add tile layer
                     addTileLayer(provider);
+                    
+                    // Initialize drawing controls
+                    initDrawingControls();
                     
                     // Load devices after map is initialized
                     loadDevices();
@@ -213,6 +287,10 @@ ob_start();
                     maxZoom: 19,
                     subdomains: ['a', 'b', 'c']
                 }).addTo(map);
+                
+                // Initialize drawing controls
+                initDrawingControls();
+                
                 loadDevices();
             });
         };
@@ -250,25 +328,6 @@ ob_start();
             
             L.tileLayer(providerConfig.url, tileOptions).addTo(map);
         }
-                
-                // Get provider configuration
-                const providers = {
-                    'openstreetmap': { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors', sub: ['a', 'b', 'c'] },
-                    'openstreetmap_fr': { url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', attr: '© OpenStreetMap France | © OpenStreetMap contributors', sub: ['a', 'b', 'c'] },
-                    'openstreetmap_de': { url: 'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', attr: '© OpenStreetMap DE | © OpenStreetMap contributors', sub: ['a', 'b', 'c'] },
-                    'cartodb_positron': { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr: '© OpenStreetMap contributors © CARTO', sub: ['a', 'b', 'c', 'd'] },
-                    'cartodb_dark': { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attr: '© OpenStreetMap contributors © CARTO', sub: ['a', 'b', 'c', 'd'] },
-                    'stamen_terrain': { url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', attr: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.', sub: ['a', 'b', 'c', 'd'] },
-                    'stamen_toner': { url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.png', attr: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.', sub: ['a', 'b', 'c', 'd'] },
-                    'stamen_watercolor': { url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', attr: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.', sub: ['a', 'b', 'c', 'd'] },
-                    'esri_worldstreetmap': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri', sub: [] },
-                    'esri_worldtopomap': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri', sub: [] },
-                    'esri_worldimagery': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr: 'Tiles © Esri', sub: [] },
-                    'opentopomap': { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attr: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)', sub: ['a', 'b', 'c'] },
-                    'cyclosm': { url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors, style by CyclOSM', sub: ['a', 'b', 'c'] },
-                    'wikimedia': { url: 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png', attr: '© OpenStreetMap contributors', sub: [] }
-                };
-                
         
         // Store all devices for picker
         let allDevices = {};
@@ -375,6 +434,277 @@ ob_start();
             div.textContent = text;
             return div.innerHTML;
         }
+        
+        // Initialize drawing controls for geofences
+        function initDrawingControls() {
+            if (!map) return;
+            
+            // Add drawn items layer to map
+            map.addLayer(drawnItems);
+            
+            // Configure draw control - only allow polygons
+            drawControl = new L.Control.Draw({
+                draw: {
+                    polygon: {
+                        allowIntersection: false,
+                        showArea: true,
+                        drawError: {
+                            color: '#e1e100',
+                            message: '<strong>Oh snap!</strong> you can\'t draw that!'
+                        },
+                        shapeOptions: {
+                            color: '#d4af37',
+                            fillColor: '#d4af37',
+                            fillOpacity: 0.2,
+                            weight: 3
+                        }
+                    },
+                    polyline: false,
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    remove: true
+                }
+            });
+            
+            // Add draw control to map
+            map.addControl(drawControl);
+            
+            // Handle draw events
+            map.on(L.Draw.Event.CREATED, function(e) {
+                const layer = e.layer;
+                const type = e.layerType;
+                
+                if (type === 'polygon') {
+                    // Get coordinates
+                    const latlngs = layer.getLatLngs()[0];
+                    const coordinates = latlngs.map(function(latlng) {
+                        return [latlng.lat, latlng.lng];
+                    });
+                    
+                    // Store coordinates for saving
+                    $('#geofenceCoordinates').val(JSON.stringify(coordinates));
+                    
+                    // Add to drawn items
+                    drawnItems.addLayer(layer);
+                    
+                    // Open modal to save geofence
+                    openGeofenceModal();
+                }
+            });
+            
+            // Handle draw start/stop
+            map.on(L.Draw.Event.DRAWSTART, function() {
+                isDrawingMode = true;
+                $('#geofenceDrawButton').addClass('active').html('<i class="fas fa-stop me-1"></i>Stop Drawing');
+            });
+            
+            map.on(L.Draw.Event.DRAWSTOP, function() {
+                isDrawingMode = false;
+                $('#geofenceDrawButton').removeClass('active').html('<i class="fas fa-draw-polygon me-1"></i>Draw Geofence');
+            });
+        }
+        
+        // Toggle geofence drawing mode
+        window.toggleGeofenceDrawing = function() {
+            if (!drawControl) {
+                alert('Drawing controls not initialized');
+                return;
+            }
+            
+            if (isDrawingMode) {
+                // Stop drawing
+                map.removeControl(drawControl);
+                initDrawingControls();
+                isDrawingMode = false;
+                $('#geofenceDrawButton').removeClass('active').html('<i class="fas fa-draw-polygon me-1"></i>Draw Geofence');
+            } else {
+                // Start drawing - trigger polygon draw
+                const drawPolygon = new L.Draw.Polygon(map, {
+                    allowIntersection: false,
+                    showArea: true,
+                    shapeOptions: {
+                        color: '#d4af37',
+                        fillColor: '#d4af37',
+                        fillOpacity: 0.2,
+                        weight: 3
+                    }
+                });
+                drawPolygon.enable();
+            }
+        };
+        
+        // Load geofences and display on map
+        function loadGeofences() {
+            $.get('/api/geofences.php', function(geofences) {
+                // Remove existing geofence layers
+                Object.values(geofenceLayers).forEach(layer => {
+                    map.removeLayer(layer);
+                });
+                geofenceLayers = {};
+                
+                // Add each geofence to map
+                geofences.forEach(function(geofence) {
+                    if (!geofence.active) return;
+                    
+                    let coordinates = geofence.coordinates;
+                    if (typeof coordinates === 'string') {
+                        try {
+                            coordinates = JSON.parse(coordinates);
+                        } catch (e) {
+                            console.error('Failed to parse geofence coordinates:', e);
+                            return;
+                        }
+                    }
+                    
+                    if (!coordinates || (Array.isArray(coordinates) && coordinates.length === 0)) return;
+                    
+                    let polygon;
+                    if (geofence.type === 'polygon') {
+                        // Polygon: coordinates = [[lat, lon], [lat, lon], ...]
+                        polygon = L.polygon(coordinates, {
+                            color: '#d4af37',
+                            fillColor: '#d4af37',
+                            fillOpacity: 0.2,
+                            weight: 3
+                        });
+                    } else if (geofence.type === 'circle') {
+                        // Circle: coordinates = [centerLat, centerLon, radiusKm]
+                        const center = [coordinates[0], coordinates[1]];
+                        const radiusM = coordinates[2] * 1000; // Convert km to meters
+                        polygon = L.circle(center, {
+                            radius: radiusM,
+                            color: '#d4af37',
+                            fillColor: '#d4af37',
+                            fillOpacity: 0.2,
+                            weight: 3
+                        });
+                    } else if (geofence.type === 'rectangle') {
+                        // Rectangle: coordinates = [[minLat, minLon], [maxLat, maxLon]]
+                        const bounds = [coordinates[0], coordinates[1]];
+                        polygon = L.rectangle(bounds, {
+                            color: '#d4af37',
+                            fillColor: '#d4af37',
+                            fillOpacity: 0.2,
+                            weight: 3
+                        });
+                    }
+                    
+                    if (polygon) {
+                        polygon.bindPopup(`
+                            <div style="min-width: 200px;">
+                                <strong>${escapeHtml(geofence.name)}</strong><br>
+                                <small>Type: ${escapeHtml(geofence.type)}</small><br>
+                                <small>Status: ${geofence.active ? 'Active' : 'Inactive'}</small>
+                            </div>
+                        `);
+                        polygon.addTo(map);
+                        geofenceLayers[geofence.id] = polygon;
+                    }
+                });
+            }).fail(function() {
+                console.error('Failed to load geofences');
+            });
+        }
+        
+        // Open geofence modal
+        function openGeofenceModal() {
+            // Load devices and groups
+            loadGeofenceDevices();
+            loadGeofenceGroups();
+            
+            // Reset form
+            $('#geofenceForm')[0].reset();
+            $('#geofenceId').val('');
+            $('#geofenceModalLabel').html('<i class="fas fa-draw-polygon me-2"></i>Create Geofence');
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('geofenceModal'));
+            modal.show();
+        }
+        
+        // Load devices for geofence association
+        function loadGeofenceDevices() {
+            $.get('/api/devices/map', function(devices) {
+                const select = $('#geofenceDevices');
+                select.empty();
+                devices.forEach(function(device) {
+                    select.append(`<option value="${device.id}">${escapeHtml(device.device_uid)}${device.device_type_label ? ' (' + escapeHtml(device.device_type_label) + ')' : ''}</option>`);
+                });
+            });
+        }
+        
+        // Load device groups for geofence association
+        function loadGeofenceGroups() {
+            $.get('/api/device_groups.php', function(groups) {
+                const select = $('#geofenceGroups');
+                select.empty();
+                groups.forEach(function(group) {
+                    select.append(`<option value="${group.id}">${escapeHtml(group.name)}</option>`);
+                });
+            });
+        }
+        
+        // Save geofence
+        window.saveGeofence = function() {
+            const form = $('#geofenceForm')[0];
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const name = $('#geofenceName').val();
+            const coordinates = $('#geofenceCoordinates').val();
+            
+            if (!name || !coordinates) {
+                alert('Please provide a name and draw a polygon on the map');
+                return;
+            }
+            
+            // Get selected devices and groups
+            const deviceIds = Array.from($('#geofenceDevices option:selected')).map(opt => opt.value).filter(v => v);
+            const groupIds = Array.from($('#geofenceGroups option:selected')).map(opt => opt.value).filter(v => v);
+            
+            const data = {
+                name: name,
+                type: 'polygon',
+                coordinates: JSON.parse(coordinates),
+                device_ids: deviceIds,
+                group_ids: groupIds,
+                active: $('#geofenceActive').is(':checked') ? 1 : 0
+            };
+            
+            $.ajax({
+                url: '/api/geofences.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    if (response.success) {
+                        // Close modal
+                        bootstrap.Modal.getInstance(document.getElementById('geofenceModal')).hide();
+                        
+                        // Clear drawn items
+                        drawnItems.clearLayers();
+                        
+                        // Reload geofences
+                        loadGeofences();
+                        
+                        alert('Geofence created successfully!');
+                    } else {
+                        alert('Failed to create geofence: ' + (response.error || 'Unknown error'));
+                    }
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Failed to create geofence';
+                    alert(error);
+                }
+            });
+        };
     });
 })();
 </script>
@@ -398,6 +728,41 @@ ob_start();
 #locationButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+#geofenceDrawButton.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+/* Leaflet Draw styling */
+.leaflet-draw-toolbar {
+    margin-top: 10px;
+}
+
+.leaflet-draw-toolbar a {
+    background-color: var(--dragnet-dark);
+    color: var(--dragnet-badge-gold);
+    border: 1px solid var(--dragnet-badge-gold);
+}
+
+.leaflet-draw-toolbar a:hover {
+    background-color: var(--dragnet-badge-gold);
+    color: var(--dragnet-dark);
+}
+
+.leaflet-draw-actions {
+    background-color: var(--dragnet-dark);
+    border: 1px solid var(--dragnet-badge-gold);
+}
+
+.leaflet-draw-actions a {
+    color: var(--dragnet-badge-gold);
+}
+
+.leaflet-draw-actions a:hover {
+    background-color: var(--dragnet-badge-gold);
+    color: var(--dragnet-dark);
 }
 </style>
 
