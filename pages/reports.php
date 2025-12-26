@@ -26,6 +26,12 @@ $tenantId = require_tenant();
 // Get date range (default to last 30 days)
 $startDate = $_GET['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end_date'] ?? date('Y-m-d');
+$filterAssetId = isset($_GET['asset_id']) ? (int)$_GET['asset_id'] : null;
+$filterDeviceId = isset($_GET['device_id']) ? (int)$_GET['device_id'] : null;
+
+// Get assets and devices for filters
+$assets = asset_list_all($tenantId);
+$devices = device_list_all($tenantId);
 
 ob_start();
 ?>
@@ -44,19 +50,43 @@ ob_start();
             </div>
             <div class="card-body">
                 <form method="GET" class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Start Date</label>
                         <input type="date" class="form-control" name="start_date" value="<?= h($startDate) ?>">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">End Date</label>
                         <input type="date" class="form-control" name="end_date" value="<?= h($endDate) ?>">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary w-100">
+                    <div class="col-md-3">
+                        <label class="form-label">Asset (Optional)</label>
+                        <select class="form-select" name="asset_id">
+                            <option value="">All Assets</option>
+                            <?php foreach ($assets as $asset): ?>
+                            <option value="<?= $asset['id'] ?>" <?= $filterAssetId === $asset['id'] ? 'selected' : '' ?>>
+                                <?= h($asset['name']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Device (Optional)</label>
+                        <select class="form-select" name="device_id">
+                            <option value="">All Devices</option>
+                            <?php foreach ($devices as $device): ?>
+                            <option value="<?= $device['id'] ?>" <?= $filterDeviceId === $device['id'] ? 'selected' : '' ?>>
+                                <?= h($device['device_uid']) ?> (<?= h($device['imei']) ?>)
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter me-1"></i>Apply Filters
                         </button>
+                        <a href="/reports.php" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Clear Filters
+                        </a>
                     </div>
                 </form>
             </div>
@@ -184,13 +214,17 @@ ob_start();
 function generateReport(type, format = 'html') {
     const startDate = document.querySelector('input[name="start_date"]').value;
     const endDate = document.querySelector('input[name="end_date"]').value;
+    const assetId = document.querySelector('select[name="asset_id"]').value;
+    const deviceId = document.querySelector('select[name="device_id"]').value;
     
     if (!startDate || !endDate) {
         alert('Please select both start and end dates');
         return;
     }
     
-    const url = `/api/reports/generate.php?type=${encodeURIComponent(type)}&format=${encodeURIComponent(format)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+    let url = `/api/reports/generate.php?type=${encodeURIComponent(type)}&format=${encodeURIComponent(format)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+    if (assetId) url += `&asset_id=${encodeURIComponent(assetId)}`;
+    if (deviceId) url += `&device_id=${encodeURIComponent(deviceId)}`;
     
     if (format === 'html') {
         // Open in new window for viewing
@@ -207,13 +241,17 @@ function generateReport(type, format = 'html') {
 function downloadReport(type, format) {
     const startDate = document.querySelector('input[name="start_date"]').value;
     const endDate = document.querySelector('input[name="end_date"]').value;
+    const assetId = document.querySelector('select[name="asset_id"]').value;
+    const deviceId = document.querySelector('select[name="device_id"]').value;
     
     if (!startDate || !endDate) {
         alert('Please select both start and end dates');
         return;
     }
     
-    const url = `/api/reports/generate.php?type=${encodeURIComponent(type)}&format=${encodeURIComponent(format)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&download=1`;
+    let url = `/api/reports/generate.php?type=${encodeURIComponent(type)}&format=${encodeURIComponent(format)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&download=1`;
+    if (assetId) url += `&asset_id=${encodeURIComponent(assetId)}`;
+    if (deviceId) url += `&device_id=${encodeURIComponent(deviceId)}`;
     window.location.href = url;
 }
 </script>

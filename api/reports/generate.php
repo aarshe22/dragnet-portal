@@ -26,13 +26,19 @@ $reportType = $_GET['type'] ?? '';
 $format = $_GET['format'] ?? 'html'; // html, pdf
 $startDate = $_GET['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end_date'] ?? date('Y-m-d');
+$assetId = isset($_GET['asset_id']) ? (int)$_GET['asset_id'] : null;
+$deviceId = isset($_GET['device_id']) ? (int)$_GET['device_id'] : null;
 
 if (!$reportType) {
     json_response(['error' => 'Report type required'], 400);
 }
 
 try {
-    $report = generate_report($reportType, $startDate, $endDate, $format);
+    $filters = [];
+    if ($assetId) $filters['asset_id'] = $assetId;
+    if ($deviceId) $filters['device_id'] = $deviceId;
+    
+    $report = generate_report($reportType, $startDate, $endDate, $format, $filters);
     
     if ($format === 'pdf') {
         // For PDF, return HTML that can be printed to PDF by browser

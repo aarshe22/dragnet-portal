@@ -149,6 +149,71 @@ function geofence_get_groups(int $geofenceId, ?int $tenantId = null): array
 }
 
 /**
+ * Get assets associated with geofence
+ */
+function geofence_get_assets(int $geofenceId, ?int $tenantId = null): array
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $sql = "SELECT a.* FROM assets a
+            INNER JOIN geofence_assets ga ON a.id = ga.asset_id
+            WHERE ga.geofence_id = :geofence_id AND a.tenant_id = :tenant_id
+            ORDER BY a.name ASC";
+    
+    return db_fetch_all($sql, ['geofence_id' => $geofenceId, 'tenant_id' => $tenantId]);
+}
+
+/**
+ * Add asset to geofence
+ */
+function geofence_add_asset(int $geofenceId, int $assetId, ?int $tenantId = null): bool
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    // Verify geofence belongs to tenant
+    $geofence = geofence_find($geofenceId, $tenantId);
+    if (!$geofence) {
+        return false;
+    }
+    
+    // Verify asset belongs to tenant
+    require_once __DIR__ . '/assets.php';
+    $asset = asset_find($assetId, $tenantId);
+    if (!$asset) {
+        return false;
+    }
+    
+    try {
+        $sql = "INSERT INTO geofence_assets (geofence_id, asset_id) 
+                VALUES (:geofence_id, :asset_id)
+                ON DUPLICATE KEY UPDATE geofence_id = geofence_id";
+        db_execute($sql, ['geofence_id' => $geofenceId, 'asset_id' => $assetId]);
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
+ * Remove asset from geofence
+ */
+function geofence_remove_asset(int $geofenceId, int $assetId, ?int $tenantId = null): bool
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $sql = "DELETE FROM geofence_assets 
+            WHERE geofence_id = :geofence_id AND asset_id = :asset_id";
+    $affected = db_execute($sql, ['geofence_id' => $geofenceId, 'asset_id' => $assetId]);
+    return $affected > 0;
+}
+
+/**
  * Add device to geofence
  */
 function geofence_add_device(int $geofenceId, int $deviceId, ?int $tenantId = null): bool

@@ -83,6 +83,11 @@ ob_start();
                     <i class="fas fa-cog me-1"></i>Settings
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pwa-tab" data-bs-toggle="tab" data-bs-target="#pwa" type="button">
+                    <i class="fas fa-mobile-alt me-1"></i>PWA Installation
+                </button>
+            </li>
         </ul>
         
         <div class="tab-content" id="adminTabContent">
@@ -747,6 +752,133 @@ ob_start();
                                     <i class="fas fa-sync me-1"></i>Reset to Defaults
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PWA Installation Tab -->
+            <div class="tab-pane fade" id="pwa" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Progressive Web App (PWA) Installation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>About PWA Installation</h6>
+                            <p class="mb-0">Install Dragnet Intelematics as a native app on iOS, Android, Windows, or macOS. The PWA provides:</p>
+                            <ul class="mb-0 mt-2">
+                                <li>Quick access from home screen</li>
+                                <li>Offline functionality with cached data</li>
+                                <li>GPS location services for mobile devices</li>
+                                <li>Push notifications for alerts</li>
+                                <li>Native app-like experience</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fab fa-apple me-2"></i>iOS (Safari)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <ol>
+                                            <li>Open Safari on your iOS device</li>
+                                            <li>Navigate to this portal</li>
+                                            <li>Tap the <strong>Share</strong> button <i class="fas fa-share-square"></i></li>
+                                            <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                                            <li>Tap <strong>"Add"</strong> to confirm</li>
+                                        </ol>
+                                        <p class="text-muted mb-0"><small>The app will appear on your home screen and can use GPS and push notifications.</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fab fa-android me-2"></i>Android (Chrome)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <ol>
+                                            <li>Open Chrome on your Android device</li>
+                                            <li>Navigate to this portal</li>
+                                            <li>Tap the <strong>Menu</strong> button <i class="fas fa-ellipsis-v"></i> (three dots)</li>
+                                            <li>Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
+                                            <li>Tap <strong>"Add"</strong> or <strong>"Install"</strong> to confirm</li>
+                                        </ol>
+                                        <p class="text-muted mb-0"><small>The app will appear on your home screen with full GPS and notification support.</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fab fa-windows me-2"></i>Windows (Edge/Chrome)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <ol>
+                                            <li>Open Edge or Chrome on Windows</li>
+                                            <li>Navigate to this portal</li>
+                                            <li>Click the <strong>Install</strong> icon <i class="fas fa-plus-circle"></i> in the address bar</li>
+                                            <li>Or go to <strong>Menu</strong> → <strong>"Apps"</strong> → <strong>"Install this site as an app"</strong></li>
+                                            <li>Click <strong>"Install"</strong> in the dialog</li>
+                                        </ol>
+                                        <p class="text-muted mb-0"><small>The app will open in its own window with Windows notification support.</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fab fa-apple me-2"></i>macOS (Safari/Chrome)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>Safari:</h6>
+                                        <ol>
+                                            <li>Click <strong>File</strong> → <strong>"Add to Dock"</strong></li>
+                                            <li>The app will appear in your Dock</li>
+                                        </ol>
+                                        <h6 class="mt-3">Chrome/Edge:</h6>
+                                        <ol>
+                                            <li>Click the <strong>Install</strong> icon in the address bar</li>
+                                            <li>Or go to <strong>Menu</strong> → <strong>"Install Dragnet Intelematics..."</strong></li>
+                                            <li>Click <strong>"Install"</strong> to confirm</li>
+                                        </ol>
+                                        <p class="text-muted mb-0"><small>The app will open in its own window with macOS notification support.</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Notification Support</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>The PWA supports push notifications on all platforms:</p>
+                                <ul>
+                                    <li><strong>iOS/Android:</strong> Native push notifications via service worker</li>
+                                    <li><strong>Windows:</strong> Windows 10+ native notifications</li>
+                                    <li><strong>macOS:</strong> macOS native notifications</li>
+                                    <li><strong>Browser:</strong> Web Push API notifications (Chrome, Firefox, Edge, Safari)</li>
+                                </ul>
+                                <p class="mb-0"><strong>Note:</strong> You'll be prompted to enable notifications when you first use the app. Notifications will alert you to critical events, device status changes, and important updates.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="document.getElementById('pwaInstallButton')?.click()">
+                                <i class="fas fa-download me-2"></i>Open Installation Instructions
+                            </button>
+                            <button class="btn btn-secondary" onclick="testNotifications()">
+                                <i class="fas fa-bell me-2"></i>Test Notifications
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2188,6 +2320,34 @@ ob_start();
                     });
                 }
             });
+        };
+        
+        // Test notifications function
+        window.testNotifications = function() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification('Dragnet Intelematics Test', {
+                        body: 'This is a test notification. If you see this, notifications are working correctly!',
+                        icon: '/public/icons/icon-192.png',
+                        tag: 'test-notification'
+                    });
+                    alert('Test notification sent! Check your notification center.');
+                } else if (Notification.permission === 'default') {
+                    Notification.requestPermission().then(function(permission) {
+                        if (permission === 'granted') {
+                            new Notification('Dragnet Intelematics Test', {
+                                body: 'Notifications enabled! You will now receive alerts.',
+                                icon: '/public/icons/icon-192.png',
+                                tag: 'test-notification'
+                            });
+                        }
+                    });
+                } else {
+                    alert('Notifications are blocked. Please enable them in your browser settings.');
+                }
+            } else {
+                alert('Your browser does not support notifications.');
+            }
         };
         
         // Load email settings when settings tab is shown

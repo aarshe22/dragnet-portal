@@ -38,6 +38,7 @@ switch ($method) {
             
             // Get associated devices and groups
             $geofence['devices'] = geofence_get_devices($geofenceId, $tenantId);
+            $geofence['assets'] = geofence_get_assets($geofenceId, $tenantId);
             $geofence['groups'] = geofence_get_groups($geofenceId, $tenantId);
             json_response($geofence);
         } else {
@@ -69,6 +70,13 @@ switch ($method) {
             }
         }
         
+        // Add assets if provided
+        if (!empty($data['asset_ids']) && is_array($data['asset_ids'])) {
+            foreach ($data['asset_ids'] as $assetId) {
+                geofence_add_asset($geofenceId, (int)$assetId, $tenantId);
+            }
+        }
+        
         json_response(['success' => true, 'id' => $geofenceId, 'message' => 'Geofence created']);
         break;
         
@@ -80,13 +88,14 @@ switch ($method) {
             json_response(['error' => 'Geofence ID required'], 400);
         }
         
-        // Extract device/group associations if provided
+        // Extract device/group/asset associations if provided
         $deviceIds = $data['device_ids'] ?? null;
         $groupIds = $data['group_ids'] ?? null;
+        $assetIds = $data['asset_ids'] ?? null;
         
-        // Remove device_ids and group_ids from data before updating geofence
+        // Remove device_ids, group_ids, and asset_ids from data before updating geofence
         $updateData = $data;
-        unset($updateData['device_ids'], $updateData['group_ids']);
+        unset($updateData['device_ids'], $updateData['group_ids'], $updateData['asset_ids']);
         
         if (geofence_update($geofenceId, $updateData, $tenantId)) {
             // Update device associations if provided
@@ -127,6 +136,27 @@ switch ($method) {
                 foreach ($groupIds as $groupId) {
                     if (!in_array($groupId, $currentGroupIds)) {
                         geofence_add_group($geofenceId, (int)$groupId, $tenantId);
+                    }
+                }
+            }
+            
+            // Update asset associations if provided
+            if ($assetIds !== null && is_array($assetIds)) {
+                // Get current assets
+                $currentAssets = geofence_get_assets($geofenceId, $tenantId);
+                $currentAssetIds = array_map(function($a) { return $a['id']; }, $currentAssets);
+                
+                // Remove assets not in new list
+                foreach ($currentAssetIds as $assetId) {
+                    if (!in_array($assetId, $assetIds)) {
+                        geofence_remove_asset($geofenceId, $assetId, $tenantId);
+                    }
+                }
+                
+                // Add new assets
+                foreach ($assetIds as $assetId) {
+                    if (!in_array($assetId, $currentAssetIds)) {
+                        geofence_add_asset($geofenceId, (int)$assetId, $tenantId);
                     }
                 }
             }

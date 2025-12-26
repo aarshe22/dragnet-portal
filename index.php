@@ -121,7 +121,13 @@ $pageMap = [
 
 // Check if it's an API endpoint
 if (strpos($path, '/api/') === 0) {
-    $apiFile = __DIR__ . '/api' . str_replace('/api', '', $path) . '.php';
+    // Remove /api prefix
+    $apiPath = str_replace('/api', '', $path);
+    // If path doesn't end with .php, add it
+    if (substr($apiPath, -4) !== '.php') {
+        $apiPath .= '.php';
+    }
+    $apiFile = __DIR__ . '/api' . $apiPath;
     if (file_exists($apiFile)) {
         require $apiFile;
         exit;

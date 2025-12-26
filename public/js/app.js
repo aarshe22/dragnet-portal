@@ -76,14 +76,50 @@ const DragNet = {
         });
     },
     
-    // Show notification
-    showNotification: function(title, body, url) {
+    // Show notification (enhanced for Windows/macOS)
+    showNotification: function(title, body, url, options = {}) {
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, {
+            const notificationOptions = {
                 body: body,
                 icon: '/public/icons/icon-192.png',
                 badge: '/public/icons/icon-192.png',
-                data: url || '/'
+                data: url || '/',
+                tag: options.tag || 'dragnet-alert',
+                requireInteraction: options.requireInteraction || false,
+                silent: options.silent || false,
+                ...options
+            };
+            
+            // Enhanced for Windows 10+ (Action Center)
+            if (navigator.userAgent.indexOf('Windows') > -1) {
+                notificationOptions.actions = options.actions || [
+                    { action: 'view', title: 'View Details' },
+                    { action: 'dismiss', title: 'Dismiss' }
+                ];
+            }
+            
+            const notification = new Notification(title, notificationOptions);
+            
+            // Handle notification click
+            notification.onclick = function(event) {
+                event.preventDefault();
+                if (url) {
+                    window.focus();
+                    window.location.href = url;
+                }
+                notification.close();
+            };
+            
+            // Auto-close after 5 seconds (unless requireInteraction is true)
+            if (!notificationOptions.requireInteraction) {
+                setTimeout(() => notification.close(), 5000);
+            }
+            
+            return notification;
+        } else if ('Notification' in window && Notification.permission === 'default') {
+            // Request permission if not yet granted
+            this.requestNotificationPermission().then(() => {
+                this.showNotification(title, body, url, options);
             });
         }
     },
@@ -91,12 +127,40 @@ const DragNet = {
     // Request notification permission
     requestNotificationPermission: function() {
         if ('Notification' in window) {
-            Notification.requestPermission().then(function(permission) {
+            return Notification.requestPermission().then(function(permission) {
                 if (permission === 'granted') {
-                    DragNet.subscribePush();
+                    // Subscribe to push notifications if supported
+                    if ('serviceWorker' in navigator && 'PushManager' in window) {
+                        DragNet.subscribePush().catch(err => {
+                            console.log('Push subscription optional:', err);
+                        });
+                    }
+                    return permission;
                 }
+                return permission;
             });
         }
+        return Promise.resolve('unsupported');
+    },
+    
+    // Enhanced notification for critical alerts (Windows/macOS native)
+    showCriticalAlert: function(title, body, url, severity = 'warning') {
+        const options = {
+            requireInteraction: true,
+            tag: 'critical-alert',
+            actions: [
+                { action: 'view', title: 'View Alert' },
+                { action: 'acknowledge', title: 'Acknowledge' }
+            ]
+        };
+        
+        // Use different icons based on severity
+        if (severity === 'critical') {
+            options.icon = '/public/icons/icon-192.png';
+            options.badge = '/public/icons/icon-192.png';
+        }
+        
+        return this.showNotification(title, body, url, options);
     }
 };
 

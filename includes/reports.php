@@ -10,23 +10,23 @@ require_once __DIR__ . '/tenant.php';
 /**
  * Generate a report
  */
-function generate_report(string $type, string $startDate, string $endDate, string $format = 'html'): string
+function generate_report(string $type, string $startDate, string $endDate, string $format = 'html', array $filters = []): string
 {
     $tenantId = require_tenant();
     
     switch ($type) {
         case 'distance':
-            return generate_distance_report($tenantId, $startDate, $endDate, $format);
+            return generate_distance_report($tenantId, $startDate, $endDate, $format, $filters);
         case 'idle':
-            return generate_idle_report($tenantId, $startDate, $endDate, $format);
+            return generate_idle_report($tenantId, $startDate, $endDate, $format, $filters);
         case 'violations':
-            return generate_violations_report($tenantId, $startDate, $endDate, $format);
+            return generate_violations_report($tenantId, $startDate, $endDate, $format, $filters);
         case 'fuel':
-            return generate_fuel_report($tenantId, $startDate, $endDate, $format);
+            return generate_fuel_report($tenantId, $startDate, $endDate, $format, $filters);
         case 'activity':
-            return generate_activity_report($tenantId, $startDate, $endDate, $format);
+            return generate_activity_report($tenantId, $startDate, $endDate, $format, $filters);
         case 'health':
-            return generate_health_report($tenantId, $startDate, $endDate, $format);
+            return generate_health_report($tenantId, $startDate, $endDate, $format, $filters);
         default:
             throw new Exception('Unknown report type');
     }
@@ -35,8 +35,25 @@ function generate_report(string $type, string $startDate, string $endDate, strin
 /**
  * Generate Distance Report
  */
-function generate_distance_report(int $tenantId, string $startDate, string $endDate, string $format): string
+function generate_distance_report(int $tenantId, string $startDate, string $endDate, string $format, array $filters = []): string
 {
+    $where = ["d.tenant_id = :tenant_id", "DATE(t.timestamp) BETWEEN :start_date AND :end_date", "t.odometer IS NOT NULL"];
+    $params = [
+        'tenant_id' => $tenantId,
+        'start_date' => $startDate,
+        'end_date' => $endDate
+    ];
+    
+    if (!empty($filters['asset_id'])) {
+        $where[] = "d.asset_id = :asset_id";
+        $params['asset_id'] = $filters['asset_id'];
+    }
+    
+    if (!empty($filters['device_id'])) {
+        $where[] = "d.id = :device_id";
+        $params['device_id'] = $filters['device_id'];
+    }
+    
     $data = db_fetch_all(
         "SELECT 
             d.device_uid,
@@ -51,16 +68,10 @@ function generate_distance_report(int $tenantId, string $startDate, string $endD
         FROM telemetry t
         INNER JOIN devices d ON t.device_id = d.id
         LEFT JOIN assets a ON d.asset_id = a.id
-        WHERE d.tenant_id = :tenant_id
-        AND DATE(t.timestamp) BETWEEN :start_date AND :end_date
-        AND t.odometer IS NOT NULL
+        WHERE " . implode(' AND ', $where) . "
         GROUP BY d.id, d.device_uid, d.imei, a.name
         ORDER BY distance_km DESC",
-        [
-            'tenant_id' => $tenantId,
-            'start_date' => $startDate,
-            'end_date' => $endDate
-        ]
+        $params
     );
     
     $totalDistance = array_sum(array_column($data, 'distance_km'));

@@ -35,10 +35,23 @@ function alert_list_all(array $filters = [], ?int $tenantId = null): array
         $params['acknowledged'] = $filters['acknowledged'] ? 1 : 0;
     }
     
-    $sql = "SELECT a.*, d.device_uid, d.imei, ast.name as asset_name
+    // Support filtering by asset_id or device_id
+    if (isset($filters['asset_id'])) {
+        $where[] = "a.asset_id = :asset_id";
+        $params['asset_id'] = $filters['asset_id'];
+    }
+    
+    if (isset($filters['device_id'])) {
+        $where[] = "a.device_id = :device_id";
+        $params['device_id'] = $filters['device_id'];
+    }
+    
+    $sql = "SELECT a.*, 
+                   d.device_uid, d.imei,
+                   ast.name as asset_name, ast.id as asset_id_display
             FROM alerts a
-            INNER JOIN devices d ON a.device_id = d.id
-            LEFT JOIN assets ast ON d.asset_id = ast.id
+            LEFT JOIN devices d ON a.device_id = d.id
+            LEFT JOIN assets ast ON (a.asset_id = ast.id OR d.asset_id = ast.id)
             WHERE " . implode(' AND ', $where) . "
             ORDER BY a.created_at DESC";
     
@@ -109,7 +122,7 @@ function alert_count(array $filters = [], ?int $tenantId = null): int
 }
 
 /**
- * Create alert
+ * Create alert (supports both device_id and asset_id)
  */
 function alert_create(array $data, ?int $tenantId = null): int
 {
@@ -117,20 +130,97 @@ function alert_create(array $data, ?int $tenantId = null): int
         $tenantId = require_tenant();
     }
     
+    // Validate: either device_id or asset_id must be set
+    if (empty($data['device_id']) && empty($data['asset_id'])) {
+        throw new Exception('Either device_id or asset_id must be provided');
+    }
+    
     $sql = "INSERT INTO alerts 
-            (tenant_id, device_id, type, severity, message, metadata, created_at)
+            (tenant_id, device_id, asset_id, type, severity, message, metadata, created_at)
             VALUES 
-            (:tenant_id, :device_id, :type, :severity, :message, :metadata, NOW())";
+            (:tenant_id, :device_id, :asset_id, :type, :severity, :message, :metadata, NOW())";
     
     db_execute($sql, [
         'tenant_id' => $tenantId,
-        'device_id' => $data['device_id'],
+        'device_id' => $data['device_id'] ?? null,
+        'asset_id' => $data['asset_id'] ?? null,
         'type' => $data['type'],
         'severity' => $data['severity'] ?? 'warning',
         'message' => $data['message'] ?? null,
         'metadata' => isset($data['metadata']) ? json_encode($data['metadata']) : null
     ]);
     
-    return (int)db_last_insert_id();
+    $alertId = (int)db_last_insert_id();
+    
+    // Notify subscribed users
+    alert_notify_subscribers($alertId, $tenantId);
+    
+    return $alertId;
+}
+
+/**
+ * Notify users subscribed to this alert
+ */
+function alert_notify_subscribers(int $alertId, int $tenantId): void
+{
+    $alert = alert_find($alertId, $tenantId);
+    if (!$alert) {
+        return;
+    }
+    
+    // Get subscriptions matching this alert
+    $where = ["uas.tenant_id = :tenant_id", "uas.enabled = 1"];
+    $params = ['tenant_id' => $tenantId];
+    
+    // Match by type
+    if ($alert['type']) {
+        $where[] = "(uas.alert_type IS NULL OR uas.alert_type = :alert_type)";
+        $params['alert_type'] = $alert['type'];
+    }
+    
+    // Match by severity
+    if ($alert['severity']) {
+        $where[] = "(uas.severity IS NULL OR uas.severity = :severity)";
+        $params['severity'] = $alert['severity'];
+    }
+    
+    // Match by asset or device
+    if ($alert['asset_id']) {
+        $where[] = "(uas.asset_id IS NULL OR uas.asset_id = :asset_id)";
+        $params['asset_id'] = $alert['asset_id'];
+    } elseif ($alert['device_id']) {
+        $where[] = "(uas.device_id IS NULL OR uas.device_id = :device_id)";
+        $params['device_id'] = $alert['device_id'];
+    }
+    
+    $subscriptions = db_fetch_all(
+        "SELECT uas.*, u.email, ps.endpoint, ps.p256dh_key, ps.auth_key
+         FROM user_alert_subscriptions uas
+         INNER JOIN users u ON uas.user_id = u.id
+         LEFT JOIN push_subscriptions ps ON u.id = ps.user_id
+         WHERE " . implode(' AND ', $where),
+        $params
+    );
+    
+    foreach ($subscriptions as $subscription) {
+        // Send push notification if enabled
+        if ($subscription['push_notifications'] && $subscription['endpoint']) {
+            require_once __DIR__ . '/push.php';
+            push_send_notification(
+                $subscription['endpoint'],
+                $subscription['p256dh_key'],
+                $subscription['auth_key'],
+                $alert['type'],
+                $alert['message'] ?? 'New alert',
+                json_encode(['alert_id' => $alertId])
+            );
+        }
+        
+        // Send email if enabled
+        if ($subscription['email_notifications'] && $subscription['email']) {
+            require_once __DIR__ . '/email.php';
+            email_send_alert($subscription['email'], $alert);
+        }
+    }
 }
 
