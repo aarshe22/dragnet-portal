@@ -54,6 +54,21 @@ ob_start();
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="device-groups-tab" data-bs-toggle="tab" data-bs-target="#device-groups" type="button">
+                    <i class="fas fa-layer-group me-1"></i>Device Groups
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="geofences-tab" data-bs-toggle="tab" data-bs-target="#geofences" type="button">
+                    <i class="fas fa-draw-polygon me-1"></i>Geofences
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="alert-rules-tab" data-bs-toggle="tab" data-bs-target="#alert-rules" type="button">
+                    <i class="fas fa-bell me-1"></i>Alert Rules
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button">
                     <i class="fas fa-list-alt me-1"></i>Telematics Logs
                 </button>
@@ -165,6 +180,111 @@ ob_start();
                                 <tbody id="invitesTableBody">
                                     <tr>
                                         <td colspan="6" class="text-center text-muted">Loading invites...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Device Groups Tab -->
+            <div class="tab-pane fade" id="device-groups" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Device Groups</h5>
+                        <button class="btn btn-primary btn-sm" id="btnAddGroup">
+                            <i class="fas fa-plus me-1"></i>Add Group
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="groupsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Devices</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="groupsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Loading groups...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Geofences Tab -->
+            <div class="tab-pane fade" id="geofences" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-draw-polygon me-2"></i>Geofences</h5>
+                        <div>
+                            <a href="/map.php?draw=geofence" class="btn btn-success btn-sm me-2">
+                                <i class="fas fa-map me-1"></i>Draw on Map
+                            </a>
+                            <button class="btn btn-primary btn-sm" id="btnAddGeofence">
+                                <i class="fas fa-plus me-1"></i>Add Geofence
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="geofencesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Devices/Groups</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="geofencesTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Loading geofences...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Rules Tab -->
+            <div class="tab-pane fade" id="alert-rules" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Alert Rules</h5>
+                        <button class="btn btn-primary btn-sm" id="btnAddAlertRule">
+                            <i class="fas fa-plus me-1"></i>Add Alert Rule
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="alertRulesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Alert Type</th>
+                                        <th>Severity</th>
+                                        <th>Threshold</th>
+                                        <th>Devices/Groups</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alertRulesTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Loading alert rules...</td>
                                     </tr>
                                 </tbody>
                             </table>
