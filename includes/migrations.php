@@ -153,22 +153,72 @@ function migrations_apply(string $filename, ?int $userId = null): array
         db_begin_transaction();
         
         try {
-            // Split SQL into individual statements and execute them one by one
-            // This allows us to handle errors for individual statements (like duplicate indexes)
-            $statements = array_filter(
-                array_map('trim', preg_split('/;\s*(?=(?:[^"\']*["\'][^"\']*["\'])*[^"\']*$)/', $sql)),
-                function($stmt) {
-                    return !empty($stmt) && !preg_match('/^--/', $stmt) && !preg_match('/^SET\s+/i', $stmt);
-                }
-            );
-            
             // Execute SET statements first (they don't need error handling)
             if (preg_match('/SET\s+FOREIGN_KEY_CHECKS\s*=\s*0/i', $sql)) {
                 db()->exec("SET FOREIGN_KEY_CHECKS = 0");
             }
             
+            // Split SQL into individual statements
+            // Remove comments first to avoid splitting issues
+            $cleanSql = preg_replace('/--.*$/m', '', $sql);
+            $cleanSql = preg_replace('/\/\*.*?\*\//s', '', $cleanSql);
+            
+            // Split by semicolons, but be careful with nested parentheses
+            $statements = [];
+            $current = '';
+            $depth = 0;
+            $inString = false;
+            $stringChar = '';
+            
+            for ($i = 0; $i < strlen($cleanSql); $i++) {
+                $char = $cleanSql[$i];
+                $next = $i < strlen($cleanSql) - 1 ? $cleanSql[$i + 1] : '';
+                
+                // Handle string literals
+                if (($char === '"' || $char === "'") && ($i === 0 || $cleanSql[$i - 1] !== '\\')) {
+                    if (!$inString) {
+                        $inString = true;
+                        $stringChar = $char;
+                    } elseif ($char === $stringChar) {
+                        $inString = false;
+                        $stringChar = '';
+                    }
+                }
+                
+                if (!$inString) {
+                    // Track parentheses depth
+                    if ($char === '(') {
+                        $depth++;
+                    } elseif ($char === ')') {
+                        $depth--;
+                    }
+                    
+                    // Split on semicolon only when depth is 0
+                    if ($char === ';' && $depth === 0) {
+                        $stmt = trim($current);
+                        if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
+                            $statements[] = $stmt;
+                        }
+                        $current = '';
+                        continue;
+                    }
+                }
+                
+                $current .= $char;
+            }
+            
+            // Add remaining statement if any
+            $stmt = trim($current);
+            if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
+                $statements[] = $stmt;
+            }
+            
             // Execute each statement, ignoring errors for duplicate indexes/columns
             foreach ($statements as $statement) {
+                if (empty(trim($statement))) {
+                    continue;
+                }
+                
                 try {
                     db()->exec($statement);
                 } catch (Exception $e) {

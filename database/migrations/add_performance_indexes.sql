@@ -49,9 +49,6 @@ CREATE INDEX idx_alerts_device ON alerts(device_id, created_at DESC);
 -- Index for tenant asset queries
 CREATE INDEX idx_assets_tenant ON assets(tenant_id, status);
 
--- Index for device association (only if column exists)
--- Note: This index may fail if device_id column was removed - that's okay
-
 -- Geofences table indexes
 -- Index for active geofence queries
 CREATE INDEX idx_geofences_active ON geofences(tenant_id, active);
@@ -74,4 +71,3 @@ CREATE INDEX idx_telemetry_speed ON telemetry(device_id, speed, timestamp DESC);
 CREATE INDEX idx_telemetry_fuel ON telemetry(device_id, fuel_level, timestamp DESC);
 
 SET FOREIGN_KEY_CHECKS = 1;
-
