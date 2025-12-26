@@ -25,7 +25,7 @@ require_role('ReadOnly');
 
 $tenantId = require_tenant();
 
-$totalDevices = device_count_by_status('online', $tenantId) + device_count_by_status('offline', $tenantId);
+$totalDevices = device_count_all($tenantId);
 $onlineDevices = device_count_by_status('online', $tenantId);
 $offlineDevices = device_count_by_status('offline', $tenantId);
 $totalAssets = asset_count($tenantId);

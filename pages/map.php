@@ -30,6 +30,12 @@ ob_start();
         <h1><i class="fas fa-map me-2"></i>Live Map</h1>
     </div>
     <div class="col-auto">
+        <div class="input-group me-2" style="max-width: 300px;">
+            <span class="input-group-text"><i class="fas fa-microchip"></i></span>
+            <select class="form-select" id="devicePicker" onchange="centerOnDevice()">
+                <option value="">Select Device...</option>
+            </select>
+        </div>
         <button class="btn btn-outline-primary me-2" onclick="centerOnLocation()" id="locationButton" title="Center on my location">
             <i class="fas fa-crosshairs me-1"></i>My Location
         </button>
@@ -264,13 +270,29 @@ ob_start();
                 };
                 
         
+        // Store all devices for picker
+        let allDevices = {};
+        
         window.loadDevices = function() {
             $.get('/api/devices/map', function(devices) {
                 // Remove old markers
                 Object.values(deviceMarkers).forEach(marker => map.removeLayer(marker));
                 deviceMarkers = {};
+                allDevices = {};
+                
+                // Populate device picker dropdown
+                const picker = $('#devicePicker');
+                picker.empty().append('<option value="">Select Device...</option>');
                 
                 devices.forEach(device => {
+                    // Store device for later use
+                    allDevices[device.id] = device;
+                    
+                    // Add to dropdown (show all devices, even without location)
+                    const label = `${device.device_uid}${device.device_type_label ? ' (' + device.device_type_label + ')' : ''}${device.lat && device.lon ? ' ✓' : ' (No location)'}`;
+                    picker.append(`<option value="${device.id}">${escapeHtml(label)}</option>`);
+                    
+                    // Add marker if device has location
                     if (device.lat && device.lon) {
                         // Get device type icon
                         const deviceTypeIcon = device.device_type_icon || 'fa-car';
@@ -316,6 +338,31 @@ ob_start();
                     }
                 });
             });
+        };
+        
+        window.centerOnDevice = function() {
+            const deviceId = $('#devicePicker').val();
+            if (!deviceId) {
+                return;
+            }
+            
+            const device = allDevices[deviceId];
+            if (!device) {
+                alert('Device not found');
+                return;
+            }
+            
+            if (device.lat && device.lon) {
+                // Center map on device
+                map.setView([device.lat, device.lon], 15);
+                
+                // Open popup if marker exists
+                if (deviceMarkers[deviceId]) {
+                    deviceMarkers[deviceId].openPopup();
+                }
+            } else {
+                alert('This device does not have a location yet.');
+            }
         };
         
         window.refreshMap = function() {

@@ -192,3 +192,20 @@ function device_count_by_status(string $status, ?int $tenantId = null): int
     return (int)($result['count'] ?? 0);
 }
 
+/**
+ * Count all devices for tenant (regardless of status)
+ */
+function device_count_all(?int $tenantId = null): int
+{
+    if ($tenantId === null) {
+        $tenantId = require_tenant();
+    }
+    
+    $result = db_fetch_one(
+        "SELECT COUNT(*) as count FROM devices WHERE tenant_id = :tenant_id",
+        ['tenant_id' => $tenantId]
+    );
+    
+    return (int)($result['count'] ?? 0);
+}
+

@@ -69,9 +69,10 @@ ob_start();
                     <td>
                         <span class="badge bg-<?= 
                             $device['status'] === 'online' || $device['status'] === 'moving' ? 'success' : 
-                            ($device['status'] === 'idle' ? 'warning' : 'danger') 
+                            ($device['status'] === 'idle' ? 'warning' : 
+                            ($device['status'] === 'parked' ? 'secondary' : 'danger')) 
                         ?>">
-                            <?= h($device['status']) ?>
+                            <?= h($device['status'] ?? 'unknown') ?>
                         </span>
                     </td>
                     <td><?= $device['gsm_signal'] !== null ? $device['gsm_signal'] : '-' ?></td>
