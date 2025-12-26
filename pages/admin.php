@@ -894,9 +894,14 @@ ob_start();
                 <div class="card mt-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
-                        <button class="btn btn-sm btn-primary" onclick="loadMigrations()">
-                            <i class="fas fa-sync me-1"></i>Refresh
-                        </button>
+                        <div>
+                            <button class="btn btn-sm btn-success" onclick="scanMigrations()" title="Scan database to detect already-applied migrations">
+                                <i class="fas fa-search me-1"></i>Scan Database
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="loadMigrations()">
+                                <i class="fas fa-sync me-1"></i>Refresh
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info">
@@ -2469,9 +2474,60 @@ ob_start();
             });
         };
         
-        // Load migrations when tab is shown
+        // Scan migrations to detect already-applied ones
+        window.scanMigrations = function() {
+            if (!confirm('This will scan the database to detect which migrations have already been applied.\n\nThis is useful if migrations were applied manually before the tracking system was set up.\n\nContinue?')) {
+                return;
+            }
+            
+            const btn = $('button:contains("Scan Database")');
+            const originalHtml = btn.html();
+            btn.prop('disabled', true);
+            btn.html('<i class="fas fa-spinner fa-spin me-1"></i>Scanning...');
+            
+            $.get('/api/admin/migrations.php?action=scan', function(result) {
+                btn.prop('disabled', false);
+                btn.html(originalHtml);
+                
+                alert('Scan complete!\n\n' +
+                    'Scanned: ' + result.scanned + ' migrations\n' +
+                    'Marked as applied: ' + result.marked + ' migrations\n\n' +
+                    'The list will now be refreshed.');
+                
+                loadMigrations();
+            }).fail(function(xhr) {
+                btn.prop('disabled', false);
+                btn.html(originalHtml);
+                const error = xhr.responseJSON?.error || 'Unknown error';
+                alert('Error scanning migrations:\n\n' + error);
+            });
+        };
+        
+        // Load migrations when tab is shown (and auto-scan if needed)
         $('#migrations-tab').on('shown.bs.tab', function() {
             loadMigrations();
+            
+            // Check if any migrations are marked as applied
+            // If none are, suggest scanning
+            setTimeout(function() {
+                $.get('/api/admin/migrations.php?action=status', function(migrations) {
+                    const appliedCount = migrations.filter(m => m.applied && m.status === 'success').length;
+                    const totalCount = migrations.length;
+                    
+                    // If we have migrations but none are marked as applied, suggest scanning
+                    if (totalCount > 0 && appliedCount === 0) {
+                        const shouldScan = confirm(
+                            'No migrations are currently marked as applied.\n\n' +
+                            'If you have manually applied some migrations, you can scan the database to detect them.\n\n' +
+                            'Would you like to scan now?'
+                        );
+                        
+                        if (shouldScan) {
+                            scanMigrations();
+                        }
+                    }
+                });
+            }, 500);
         });
         
         // Test notifications function

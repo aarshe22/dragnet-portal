@@ -284,3 +284,269 @@ function migrations_get_content(string $filename): ?string
     return file_get_contents($filePath);
 }
 
+/**
+ * Detect if a migration was already applied by checking database schema
+ */
+function migrations_detect_applied(string $filename): bool
+{
+    $migrationsDir = __DIR__ . '/../database/migrations';
+    $filePath = $migrationsDir . '/' . $filename;
+    
+    if (!file_exists($filePath)) {
+        return false;
+    }
+    
+    $sql = file_get_contents($filePath);
+    if ($sql === false) {
+        return false;
+    }
+    
+    $originalSql = $sql;
+    
+    // Normalize SQL (remove comments, normalize whitespace)
+    $sql = preg_replace('/--.*$/m', '', $sql);
+    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+    $sqlUpper = strtoupper(trim($sql));
+    
+    $checks = [];
+    $allChecksPass = true;
+    
+    // Check for CREATE TABLE statements
+    if (preg_match_all('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?/i', $sql, $matches)) {
+        foreach ($matches[1] as $tableName) {
+            $tableName = trim($tableName, '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.tables 
+                 WHERE table_schema = DATABASE() AND table_name = :table_name",
+                ['table_name' => $tableName]
+            );
+            $checks[] = ['type' => 'table', 'name' => $tableName, 'exists' => (bool)$exists];
+            if (!$exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // Check for ALTER TABLE ADD COLUMN statements
+    if (preg_match_all('/ALTER\s+TABLE\s+`?(\w+)`?\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?/i', $sql, $matches)) {
+        for ($i = 0; $i < count($matches[1]); $i++) {
+            $tableName = trim($matches[1][$i], '`');
+            $columnName = trim($matches[2][$i], '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = DATABASE() 
+                 AND table_name = :table_name 
+                 AND column_name = :column_name",
+                ['table_name' => $tableName, 'column_name' => $columnName]
+            );
+            $checks[] = ['type' => 'column', 'table' => $tableName, 'name' => $columnName, 'exists' => (bool)$exists];
+            if (!$exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // Check for ALTER TABLE MODIFY COLUMN (check if column exists with expected properties)
+    if (preg_match_all('/ALTER\s+TABLE\s+`?(\w+)`?\s+MODIFY\s+COLUMN\s+`?(\w+)`?\s+([^,;]+)/i', $sql, $matches)) {
+        for ($i = 0; $i < count($matches[1]); $i++) {
+            $tableName = trim($matches[1][$i], '`');
+            $columnName = trim($matches[2][$i], '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = DATABASE() 
+                 AND table_name = :table_name 
+                 AND column_name = :column_name",
+                ['table_name' => $tableName, 'column_name' => $columnName]
+            );
+            $checks[] = ['type' => 'column_modified', 'table' => $tableName, 'name' => $columnName, 'exists' => (bool)$exists];
+            if (!$exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // Check for ALTER TABLE DROP COLUMN statements (if column doesn't exist, migration was applied)
+    if (preg_match_all('/ALTER\s+TABLE\s+`?(\w+)`?\s+DROP\s+(?:COLUMN\s+)?(?:IF\s+EXISTS\s+)?`?(\w+)`?/i', $sql, $matches)) {
+        for ($i = 0; $i < count($matches[1]); $i++) {
+            $tableName = trim($matches[1][$i], '`');
+            $columnName = trim($matches[2][$i], '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = DATABASE() 
+                 AND table_name = :table_name 
+                 AND column_name = :column_name",
+                ['table_name' => $tableName, 'column_name' => $columnName]
+            );
+            $checks[] = ['type' => 'column_dropped', 'table' => $tableName, 'name' => $columnName, 'exists' => (bool)$exists];
+            // If column doesn't exist, migration was likely applied
+            if ($exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // Check for DROP INDEX statements (if index doesn't exist, migration was applied)
+    if (preg_match_all('/DROP\s+INDEX\s+(?:IF\s+EXISTS\s+)?`?(\w+)`?\s+ON\s+`?(\w+)`?/i', $sql, $matches)) {
+        for ($i = 0; $i < count($matches[1]); $i++) {
+            $indexName = trim($matches[1][$i], '`');
+            $tableName = trim($matches[2][$i], '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.statistics 
+                 WHERE table_schema = DATABASE() 
+                 AND table_name = :table_name 
+                 AND index_name = :index_name",
+                ['table_name' => $tableName, 'index_name' => $indexName]
+            );
+            $checks[] = ['type' => 'index_dropped', 'table' => $tableName, 'name' => $indexName, 'exists' => (bool)$exists];
+            // If index doesn't exist, migration was likely applied
+            if ($exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // Check for CREATE INDEX statements
+    if (preg_match_all('/CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?\s+ON\s+`?(\w+)`?/i', $sql, $matches)) {
+        for ($i = 0; $i < count($matches[1]); $i++) {
+            $indexName = trim($matches[1][$i], '`');
+            $tableName = trim($matches[2][$i], '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.statistics 
+                 WHERE table_schema = DATABASE() 
+                 AND table_name = :table_name 
+                 AND index_name = :index_name",
+                ['table_name' => $tableName, 'index_name' => $indexName]
+            );
+            $checks[] = ['type' => 'index', 'table' => $tableName, 'name' => $indexName, 'exists' => (bool)$exists];
+            if (!$exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // Check for ADD CONSTRAINT (foreign keys)
+    if (preg_match_all('/ADD\s+CONSTRAINT\s+`?(\w+)`?/i', $sql, $matches)) {
+        foreach ($matches[1] as $constraintName) {
+            $constraintName = trim($constraintName, '`');
+            $exists = db_fetch_one(
+                "SELECT 1 FROM information_schema.table_constraints 
+                 WHERE table_schema = DATABASE() 
+                 AND constraint_name = :constraint_name",
+                ['constraint_name' => $constraintName]
+            );
+            $checks[] = ['type' => 'constraint', 'name' => $constraintName, 'exists' => (bool)$exists];
+            if (!$exists) {
+                $allChecksPass = false;
+            }
+        }
+    }
+    
+    // If we have specific checks and they all pass, migration was applied
+    if (!empty($checks) && $allChecksPass) {
+        return true;
+    }
+    
+    // If we have checks but some failed, migration was not applied
+    if (!empty($checks) && !$allChecksPass) {
+        return false;
+    }
+    
+    // If no specific checks but there are schema changes, be conservative and return false
+    // (we can't determine if it was applied)
+    if (preg_match('/(CREATE\s+TABLE|ALTER\s+TABLE|CREATE\s+INDEX|DROP\s+TABLE|DROP\s+COLUMN|DROP\s+INDEX|ADD\s+CONSTRAINT)/i', $sqlUpper)) {
+        return false; // Can't determine, be conservative
+    }
+    
+    // No schema changes detected, assume not applied
+    return false;
+}
+
+/**
+ * Scan database and mark migrations as applied if they were already applied
+ */
+function migrations_scan_and_mark(?int $userId = null): array
+{
+    $files = migrations_get_files();
+    $scanned = [];
+    $marked = 0;
+    
+    // Ensure migrations table exists
+    try {
+        db_get_pdo()->exec("
+            CREATE TABLE IF NOT EXISTS migrations (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                filename VARCHAR(255) NOT NULL UNIQUE,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                applied_by INT UNSIGNED NULL,
+                execution_time DECIMAL(10, 3) NULL,
+                error_message TEXT NULL,
+                status ENUM('success', 'failed', 'partial') DEFAULT 'success',
+                INDEX idx_filename (filename),
+                INDEX idx_applied_at (applied_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+    } catch (Exception $e) {
+        // Table might already exist
+    }
+    
+    foreach ($files as $file) {
+        $filename = $file['filename'];
+        
+        // Check if already recorded
+        $existing = null;
+        try {
+            $existing = db_fetch_one(
+                "SELECT id, status FROM migrations WHERE filename = :filename",
+                ['filename' => $filename]
+            );
+        } catch (Exception $e) {
+            // Continue
+        }
+        
+        // If already recorded as successful, skip
+        if ($existing && $existing['status'] === 'success') {
+            $scanned[] = ['filename' => $filename, 'status' => 'already_recorded'];
+            continue;
+        }
+        
+        // Detect if migration was applied
+        $isApplied = migrations_detect_applied($filename);
+        
+        if ($isApplied) {
+            // Mark as applied
+            if ($existing) {
+                db_execute(
+                    "UPDATE migrations SET 
+                     applied_at = NOW(), 
+                     applied_by = :user_id, 
+                     status = 'success',
+                     error_message = NULL
+                     WHERE filename = :filename",
+                    ['filename' => $filename, 'user_id' => $userId]
+                );
+            } else {
+                db_execute(
+                    "INSERT INTO migrations (filename, applied_at, applied_by, status) 
+                     VALUES (:filename, NOW(), :user_id, 'success')
+                     ON DUPLICATE KEY UPDATE 
+                     applied_at = NOW(), 
+                     applied_by = :user_id, 
+                     status = 'success',
+                     error_message = NULL",
+                    ['filename' => $filename, 'user_id' => $userId]
+                );
+            }
+            $marked++;
+            $scanned[] = ['filename' => $filename, 'status' => 'marked_as_applied'];
+        } else {
+            $scanned[] = ['filename' => $filename, 'status' => 'not_detected'];
+        }
+    }
+    
+    return [
+        'scanned' => count($files),
+        'marked' => $marked,
+        'details' => $scanned
+    ];
+}
+

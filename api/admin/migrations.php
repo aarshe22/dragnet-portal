@@ -43,6 +43,10 @@ switch ($method) {
             } else {
                 json_response(['filename' => $filename, 'content' => $content]);
             }
+        } elseif ($action === 'scan') {
+            require_once __DIR__ . '/../../includes/migrations.php';
+            $result = migrations_scan_and_mark($userId);
+            json_response($result);
         } else {
             json_response(['error' => 'Invalid action'], 400);
         }
