@@ -72,9 +72,14 @@ ob_start();
                     <i class="fas fa-route me-2 text-primary"></i>Distance Report
                 </h5>
                 <p class="card-text text-muted">Total distance traveled by assets during the selected period.</p>
-                <button class="btn btn-primary" onclick="generateReport('distance')">
-                    <i class="fas fa-download me-1"></i>Generate Report
-                </button>
+                <div class="btn-group w-100" role="group">
+                    <button class="btn btn-primary" onclick="generateReport('distance', 'html')" title="View Report">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                    <button class="btn btn-success" onclick="downloadReport('distance', 'html')" title="Download HTML">
+                        <i class="fas fa-download me-1"></i>HTML
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -86,9 +91,14 @@ ob_start();
                     <i class="fas fa-clock me-2 text-warning"></i>Idle Time Report
                 </h5>
                 <p class="card-text text-muted">Analysis of idle time for all assets with ignition on but no movement.</p>
-                <button class="btn btn-primary" onclick="generateReport('idle')">
-                    <i class="fas fa-download me-1"></i>Generate Report
-                </button>
+                <div class="btn-group w-100" role="group">
+                    <button class="btn btn-primary" onclick="generateReport('idle', 'html')" title="View Report">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                    <button class="btn btn-success" onclick="downloadReport('idle', 'html')" title="Download HTML">
+                        <i class="fas fa-download me-1"></i>HTML
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -100,9 +110,14 @@ ob_start();
                     <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Violations Report
                 </h5>
                 <p class="card-text text-muted">Speed violations and geofence entry/exit events.</p>
-                <button class="btn btn-primary" onclick="generateReport('violations')">
-                    <i class="fas fa-download me-1"></i>Generate Report
-                </button>
+                <div class="btn-group w-100" role="group">
+                    <button class="btn btn-primary" onclick="generateReport('violations', 'html')" title="View Report">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                    <button class="btn btn-success" onclick="downloadReport('violations', 'html')" title="Download HTML">
+                        <i class="fas fa-download me-1"></i>HTML
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -114,9 +129,14 @@ ob_start();
                     <i class="fas fa-gas-pump me-2 text-info"></i>Fuel Consumption
                 </h5>
                 <p class="card-text text-muted">Fuel usage analysis based on telemetry data.</p>
-                <button class="btn btn-primary" onclick="generateReport('fuel')">
-                    <i class="fas fa-download me-1"></i>Generate Report
-                </button>
+                <div class="btn-group w-100" role="group">
+                    <button class="btn btn-primary" onclick="generateReport('fuel', 'html')" title="View Report">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                    <button class="btn btn-success" onclick="downloadReport('fuel', 'html')" title="Download HTML">
+                        <i class="fas fa-download me-1"></i>HTML
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -128,9 +148,14 @@ ob_start();
                     <i class="fas fa-calendar-alt me-2 text-success"></i>Activity Summary
                 </h5>
                 <p class="card-text text-muted">Daily activity summary with hours of operation.</p>
-                <button class="btn btn-primary" onclick="generateReport('activity')">
-                    <i class="fas fa-download me-1"></i>Generate Report
-                </button>
+                <div class="btn-group w-100" role="group">
+                    <button class="btn btn-primary" onclick="generateReport('activity', 'html')" title="View Report">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                    <button class="btn btn-success" onclick="downloadReport('activity', 'html')" title="Download HTML">
+                        <i class="fas fa-download me-1"></i>HTML
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -142,21 +167,54 @@ ob_start();
                     <i class="fas fa-battery-half me-2 text-secondary"></i>Device Health
                 </h5>
                 <p class="card-text text-muted">Device status, battery levels, and connectivity reports.</p>
-                <button class="btn btn-primary" onclick="generateReport('health')">
-                    <i class="fas fa-download me-1"></i>Generate Report
-                </button>
+                <div class="btn-group w-100" role="group">
+                    <button class="btn btn-primary" onclick="generateReport('health', 'html')" title="View Report">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                    <button class="btn btn-success" onclick="downloadReport('health', 'html')" title="Download HTML">
+                        <i class="fas fa-download me-1"></i>HTML
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-function generateReport(type) {
+function generateReport(type, format = 'html') {
     const startDate = document.querySelector('input[name="start_date"]').value;
     const endDate = document.querySelector('input[name="end_date"]').value;
     
-    // In production, this would call an API endpoint to generate and download the report
-    alert(`Generating ${type} report for ${startDate} to ${endDate}...\n\nReport generation feature coming soon.`);
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    const url = `/api/reports/generate.php?type=${encodeURIComponent(type)}&format=${encodeURIComponent(format)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+    
+    if (format === 'html') {
+        // Open in new window for viewing
+        const win = window.open(url, '_blank');
+        if (!win) {
+            alert('Please allow popups to view reports');
+        }
+    } else if (format === 'pdf') {
+        // Download PDF
+        window.location.href = url;
+    }
+}
+
+function downloadReport(type, format) {
+    const startDate = document.querySelector('input[name="start_date"]').value;
+    const endDate = document.querySelector('input[name="end_date"]').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    const url = `/api/reports/generate.php?type=${encodeURIComponent(type)}&format=${encodeURIComponent(format)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&download=1`;
+    window.location.href = url;
 }
 </script>
 

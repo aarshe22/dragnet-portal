@@ -148,8 +148,8 @@ function device_update_status(int $deviceId, ?int $tenantId = null): void
  */
 function device_create(array $data, int $tenantId): int
 {
-    $sql = "INSERT INTO devices (tenant_id, device_uid, imei, iccid, model, firmware_version, asset_id) 
-            VALUES (:tenant_id, :device_uid, :imei, :iccid, :model, :firmware_version, :asset_id)";
+    $sql = "INSERT INTO devices (tenant_id, device_uid, imei, iccid, model, device_type, firmware_version, asset_id) 
+            VALUES (:tenant_id, :device_uid, :imei, :iccid, :model, :device_type, :firmware_version, :asset_id)";
     
     db_execute($sql, array_merge($data, ['tenant_id' => $tenantId]));
     return (int)db_last_insert_id();

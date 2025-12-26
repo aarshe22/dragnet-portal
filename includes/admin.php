@@ -210,14 +210,15 @@ function admin_get_device(int $id): ?array
 function admin_create_device(array $data): int
 {
     db_execute(
-        "INSERT INTO devices (tenant_id, device_uid, imei, iccid, model, firmware_version, asset_id) 
-         VALUES (:tenant_id, :device_uid, :imei, :iccid, :model, :firmware_version, :asset_id)",
+        "INSERT INTO devices (tenant_id, device_uid, imei, iccid, model, device_type, firmware_version, asset_id) 
+         VALUES (:tenant_id, :device_uid, :imei, :iccid, :model, :device_type, :firmware_version, :asset_id)",
         [
             'tenant_id' => $data['tenant_id'],
             'device_uid' => $data['device_uid'],
             'imei' => $data['imei'],
             'iccid' => $data['iccid'] ?? null,
             'model' => $data['model'] ?? 'FMM13A',
+            'device_type' => $data['device_type'] ?? 'vehicle',
             'firmware_version' => $data['firmware_version'] ?? null,
             'asset_id' => $data['asset_id'] ?? null
         ]

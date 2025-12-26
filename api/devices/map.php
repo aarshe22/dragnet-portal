@@ -24,13 +24,21 @@ require_role('ReadOnly');
 $tenantId = require_tenant();
 $devices = device_list_with_status($tenantId);
 
+require_once __DIR__ . '/../../includes/device_types.php';
+
 $result = [];
 foreach ($devices as $device) {
+    $deviceType = $device['device_type'] ?? 'vehicle';
+    $typeConfig = get_device_type_config($deviceType);
+    
     $result[] = [
         'id' => $device['id'],
         'device_uid' => $device['device_uid'],
         'asset_id' => $device['asset_id'],
         'status' => $device['status'],
+        'device_type' => $deviceType,
+        'device_type_icon' => $typeConfig['icon'] ?? 'fa-car',
+        'device_type_label' => $typeConfig['label'] ?? 'Vehicle',
         'lat' => $device['lat'] ? (float)$device['lat'] : null,
         'lon' => $device['lon'] ? (float)$device['lon'] : null,
         'speed' => $device['speed'] ? (float)$device['speed'] : null,

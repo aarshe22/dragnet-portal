@@ -193,7 +193,7 @@
                             <li><a class="dropdown-item" href="/profile.php"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
                             <li><a class="dropdown-item" href="/settings.php"><i class="fas fa-cog me-2"></i>Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item text-danger" href="/logout.php" onclick="return checkSimulatorBeforeLogout(event)"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -611,6 +611,22 @@
         $(function () {
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
+        
+        // Check simulator before logout
+        function checkSimulatorBeforeLogout(e) {
+            if (localStorage.getItem('simulatorStreaming')) {
+                if (!confirm('A telemetry simulator is currently running. Stop it and logout?')) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Stop simulator
+                localStorage.removeItem('simulatorStreaming');
+                localStorage.removeItem('simulatorPacketCount');
+                localStorage.removeItem('simulatorFailedCount');
+            }
+            return true;
+        }
+        window.checkSimulatorBeforeLogout = checkSimulatorBeforeLogout;
     </script>
 </body>
 </html>

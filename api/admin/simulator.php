@@ -29,8 +29,8 @@ switch ($action) {
         // Send a single telemetry packet
         $deviceId = (int)($_POST['device_id'] ?? $_GET['device_id'] ?? 0);
         $config = [
-            'speed' => isset($_POST['speed']) ? (float)$_POST['speed'] : null,
-            'moving' => isset($_POST['moving']) ? (bool)$_POST['moving'] : null,
+            'speed' => isset($_POST['speed']) && $_POST['speed'] !== '' ? (float)$_POST['speed'] : null,
+            'moving' => isset($_POST['moving']) && $_POST['moving'] !== '' ? (bool)$_POST['moving'] : null,
             'route' => $_POST['route'] ?? 'random',
             'interval' => (int)($_POST['interval'] ?? 30),
         ];
@@ -42,6 +42,10 @@ switch ($action) {
         try {
             $telemetry = teltonika_simulator_generate_telemetry($deviceId, $config);
             $device = db_fetch_one("SELECT imei FROM devices WHERE id = :id", ['id' => $deviceId]);
+            
+            if (!$device) {
+                json_response(['error' => 'Device not found'], 404);
+            }
             
             if (teltonika_simulator_send_telemetry($device['imei'], $telemetry)) {
                 json_response([
@@ -127,6 +131,7 @@ switch ($action) {
                 'device_uid' => $deviceUid,
                 'imei' => $imei,
                 'model' => 'FMM13A',
+                'device_type' => 'vehicle',
                 'status' => 'offline'
             ];
             

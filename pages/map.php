@@ -272,21 +272,44 @@ ob_start();
                 
                 devices.forEach(device => {
                     if (device.lat && device.lon) {
-                        const color = device.status === 'online' || device.status === 'moving' ? 'green' : 
-                                     device.status === 'idle' ? 'orange' : 'red';
+                        // Get device type icon
+                        const deviceTypeIcon = device.device_type_icon || 'fa-car';
+                        const deviceTypeLabel = device.device_type_label || 'Vehicle';
+                        
+                        // Status-based color
+                        const statusColors = {
+                            'online': '#28a745',
+                            'moving': '#28a745',
+                            'idle': '#ffc107',
+                            'parked': '#6c757d',
+                            'offline': '#dc3545'
+                        };
+                        const color = statusColors[device.status] || '#999999';
+                        
+                        // Create icon with device type
                         const icon = L.divIcon({
                             className: 'device-marker',
-                            html: `<i class="fas fa-circle" style="color: ${color}; font-size: 20px;"></i>`,
-                            iconSize: [20, 20]
+                            html: `<i class="fas ${deviceTypeIcon}" style="color: ${color}; font-size: 28px; text-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px rgba(0,0,0,0.3);"></i>`,
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 32]
                         });
                         
+                        // Create popup with device info
+                        const popupContent = `
+                            <div style="min-width: 200px;">
+                                <strong>${escapeHtml(device.device_uid)}</strong><br>
+                                <small style="color: #666;">${escapeHtml(deviceTypeLabel)}</small><br>
+                                <hr style="margin: 8px 0;">
+                                <strong>Status:</strong> <span style="color: ${color};">${escapeHtml(device.status)}</span><br>
+                                <strong>Speed:</strong> ${device.speed ? device.speed.toFixed(1) : '0'} km/h<br>
+                                <strong>Last Seen:</strong> ${device.last_seen || 'N/A'}<br>
+                                ${device.gsm_signal ? `<strong>GSM Signal:</strong> ${device.gsm_signal}%<br>` : ''}
+                                ${device.external_voltage ? `<strong>Voltage:</strong> ${device.external_voltage}V<br>` : ''}
+                            </div>
+                        `;
+                        
                         const marker = L.marker([device.lat, device.lon], { icon: icon })
-                            .bindPopup(`
-                                <strong>${device.device_uid}</strong><br>
-                                Status: ${device.status}<br>
-                                Speed: ${device.speed || 0} km/h<br>
-                                Last: ${device.last_seen || 'N/A'}
-                            `)
+                            .bindPopup(popupContent)
                             .addTo(map);
                         
                         deviceMarkers[device.id] = marker;
@@ -298,6 +321,13 @@ ob_start();
         window.refreshMap = function() {
             loadDevices();
         };
+        
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     });
 })();
 </script>

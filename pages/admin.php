@@ -916,6 +916,28 @@ ob_start();
                         <input type="text" class="form-control" id="deviceModel" name="model" value="FMM13A">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Device Type</label>
+                        <select class="form-select" id="deviceType" name="device_type" required>
+                            <option value="vehicle">Vehicle</option>
+                            <option value="truck">Truck</option>
+                            <option value="van">Van</option>
+                            <option value="trailer">Trailer</option>
+                            <option value="motorcycle">Motorcycle</option>
+                            <option value="boat">Boat</option>
+                            <option value="aircraft">Aircraft</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="container">Container</option>
+                            <option value="person">Person</option>
+                            <option value="cargo">Cargo</option>
+                            <option value="generator">Generator</option>
+                            <option value="tank">Tank</option>
+                            <option value="crane">Crane</option>
+                            <option value="excavator">Excavator</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <small class="form-text text-muted">Select the type of asset this device is tracking</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Firmware Version</label>
                         <input type="text" class="form-control" id="deviceFirmware" name="firmware_version">
                     </div>
@@ -1307,6 +1329,7 @@ ob_start();
                         $('#deviceImei').val(device.imei);
                         $('#deviceIccid').val(device.iccid || '');
                         $('#deviceModel').val(device.model || 'FMM13A');
+                        $('#deviceType').val(device.device_type || 'vehicle');
                         $('#deviceFirmware').val(device.firmware_version || '');
                     }
                 });
@@ -1322,6 +1345,7 @@ ob_start();
                 imei: $('#deviceImei').val(),
                 iccid: $('#deviceIccid').val() || null,
                 model: $('#deviceModel').val() || 'FMM13A',
+                device_type: $('#deviceType').val() || 'vehicle',
                 firmware_version: $('#deviceFirmware').val() || null
             };
             
@@ -2361,6 +2385,29 @@ ob_start();
         let simulatorStreamInterval = null;
         let simulatorStreaming = false;
         
+        // Check if streaming should continue from localStorage
+        function checkSimulatorState() {
+            const state = localStorage.getItem('simulatorStreaming');
+            if (state) {
+                try {
+                    const config = JSON.parse(state);
+                    if (config.deviceId && config.interval) {
+                        simulatorStreaming = true;
+                        $('#simulatorDeviceId').val(config.deviceId);
+                        $('#simulatorStartStream').hide();
+                        $('#simulatorStopStream').show();
+                        $('#simulatorSendSingle').prop('disabled', true);
+                        startSimulatorStream(config);
+                    }
+                } catch (e) {
+                    localStorage.removeItem('simulatorStreaming');
+                }
+            }
+        }
+        
+        // Initialize on page load
+        checkSimulatorState();
+        
         window.loadSimulatorDevices = function() {
             $.ajax({
                 url: '/api/admin/simulator.php?action=devices',
@@ -2436,6 +2483,67 @@ ob_start();
             });
         };
         
+        function startSimulatorStream(config) {
+            // Send packets at interval
+            let packetCount = parseInt(localStorage.getItem('simulatorPacketCount') || '0');
+            let failedCount = parseInt(localStorage.getItem('simulatorFailedCount') || '0');
+            const maxIterations = config.iterations ? parseInt(config.iterations) : null;
+            
+            const sendPacket = function() {
+                // Check if still streaming from localStorage
+                const state = localStorage.getItem('simulatorStreaming');
+                if (!state) {
+                    simulatorStopStream();
+                    return;
+                }
+                
+                if (maxIterations && packetCount >= maxIterations) {
+                    simulatorStopStream();
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/api/admin/simulator.php?action=send',
+                    method: 'POST',
+                    data: {
+                        device_id: config.deviceId,
+                        speed: config.speed,
+                        moving: config.moving,
+                        route: config.route,
+                        interval: config.interval
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            packetCount++;
+                            localStorage.setItem('simulatorPacketCount', packetCount);
+                            updateSimulatorStatus('streaming', response.telemetry, packetCount, failedCount);
+                        } else {
+                            failedCount++;
+                            localStorage.setItem('simulatorFailedCount', failedCount);
+                            updateSimulatorStatus('streaming', null, packetCount, failedCount);
+                        }
+                    },
+                    error: function() {
+                        failedCount++;
+                        localStorage.setItem('simulatorFailedCount', failedCount);
+                        updateSimulatorStatus('streaming', null, packetCount, failedCount);
+                    }
+                });
+            };
+            
+            // Clear any existing interval
+            if (simulatorStreamInterval) {
+                clearInterval(simulatorStreamInterval);
+            }
+            
+            // Send first packet immediately
+            sendPacket();
+            
+            // Then send at interval
+            simulatorStreamInterval = setInterval(sendPacket, config.interval * 1000);
+        }
+        
         window.simulatorStartStream = function() {
             const deviceId = $('#simulatorDeviceId').val();
             if (!deviceId) {
@@ -2448,7 +2556,7 @@ ob_start();
             }
             
             const config = {
-                device_id: deviceId,
+                deviceId: deviceId,
                 speed: $('#simulatorSpeed').val() || null,
                 moving: $('#simulatorMoving').val() !== '' ? ($('#simulatorMoving').val() === '1') : null,
                 route: $('#simulatorRoute').val(),
@@ -2456,57 +2564,26 @@ ob_start();
                 iterations: $('#simulatorIterations').val() || null
             };
             
+            // Store config in localStorage for persistence
+            localStorage.setItem('simulatorStreaming', JSON.stringify(config));
+            localStorage.setItem('simulatorPacketCount', '0');
+            localStorage.setItem('simulatorFailedCount', '0');
+            
             simulatorStreaming = true;
             $('#simulatorStartStream').hide();
             $('#simulatorStopStream').show();
             $('#simulatorSendSingle').prop('disabled', true);
             $('#simulatorStatus').html(`<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Starting stream...</div>`);
             
-            // Send packets at interval
-            let packetCount = 0;
-            let failedCount = 0;
-            const maxIterations = config.iterations ? parseInt(config.iterations) : null;
-            
-            const sendPacket = function() {
-                if (!simulatorStreaming) {
-                    return;
-                }
-                
-                if (maxIterations && packetCount >= maxIterations) {
-                    simulatorStopStream();
-                    return;
-                }
-                
-                $.ajax({
-                    url: '/api/admin/simulator.php?action=send',
-                    method: 'POST',
-                    data: config,
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            packetCount++;
-                            updateSimulatorStatus('streaming', response.telemetry, packetCount, failedCount);
-                        } else {
-                            failedCount++;
-                            updateSimulatorStatus('streaming', null, packetCount, failedCount);
-                        }
-                    },
-                    error: function() {
-                        failedCount++;
-                        updateSimulatorStatus('streaming', null, packetCount, failedCount);
-                    }
-                });
-            };
-            
-            // Send first packet immediately
-            sendPacket();
-            
-            // Then send at interval
-            simulatorStreamInterval = setInterval(sendPacket, config.interval * 1000);
+            startSimulatorStream(config);
         };
         
         window.simulatorStopStream = function() {
             simulatorStreaming = false;
+            localStorage.removeItem('simulatorStreaming');
+            localStorage.removeItem('simulatorPacketCount');
+            localStorage.removeItem('simulatorFailedCount');
+            
             if (simulatorStreamInterval) {
                 clearInterval(simulatorStreamInterval);
                 simulatorStreamInterval = null;
