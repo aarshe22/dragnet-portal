@@ -19,7 +19,7 @@ db_init($config['database']);
 session_start_custom($config['session']);
 
 require_auth();
-require_role('Administrator');
+require_role('Developer'); // Only developers can access schema comparison
 
 $method = $_SERVER['REQUEST_METHOD'];
 

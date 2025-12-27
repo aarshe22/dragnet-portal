@@ -61,6 +61,7 @@ function has_role(string $role): bool
         'Operator' => 2,
         'Administrator' => 3,
         'TenantOwner' => 4,
+        'Developer' => 5, // Top-level role with all capabilities
     ];
     
     $userLevel = $hierarchy[$context['user_role']] ?? 0;
@@ -71,9 +72,23 @@ function has_role(string $role): bool
 
 /**
  * Require minimum role level (exits with 403 if not met)
+ * Note: Developer role has access to all roles (highest level)
  */
 function require_role(string $role): void
 {
+    $context = get_tenant_context();
+    if (!$context) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Forbidden']);
+        exit;
+    }
+    
+    // Developer role has access to everything
+    if ($context['user_role'] === 'Developer') {
+        return;
+    }
+    
     if (!has_role($role)) {
         http_response_code(403);
         header('Content-Type: application/json');

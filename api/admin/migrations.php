@@ -19,7 +19,7 @@ db_init($config['database']);
 session_start_custom($config['session']);
 
 require_auth();
-require_role('Administrator');
+require_role('Developer'); // Only developers can access migrations
 
 $method = $_SERVER['REQUEST_METHOD'];
 $context = get_tenant_context();
@@ -81,6 +81,9 @@ switch ($method) {
             } else {
                 json_response(['error' => 'Failed to purge migration record'], 500);
             }
+        } elseif ($action === 'purge_all') {
+            $count = migrations_purge_all_successful();
+            json_response(['message' => "Purged {$count} successful migration record(s)"]);
         } else {
             json_response(['error' => 'Invalid action'], 400);
         }

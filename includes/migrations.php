@@ -642,3 +642,18 @@ function migrations_purge(string $filename): bool
     }
 }
 
+/**
+ * Purge all successful migrations from tracking
+ */
+function migrations_purge_all_successful(): int
+{
+    try {
+        $affected = db_execute(
+            "DELETE FROM migrations WHERE status = 'success'"
+        );
+        return $affected;
+    } catch (Exception $e) {
+        return 0;
+    }
+}
+

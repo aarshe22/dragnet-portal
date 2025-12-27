@@ -88,11 +88,13 @@ ob_start();
                     <i class="fas fa-mobile-alt me-1"></i>PWA Installation
                 </button>
             </li>
+            <?php if (has_role('Developer')): ?>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="migrations-tab" data-bs-toggle="tab" data-bs-target="#migrations" type="button">
                     <i class="fas fa-database me-1"></i>Database Migrations
                 </button>
             </li>
+            <?php endif; ?>
         </ul>
         
         <div class="tab-content" id="adminTabContent">
@@ -890,6 +892,7 @@ ob_start();
             </div>
             
             <!-- Database Migrations Tab -->
+            <?php if (has_role('Developer')): ?>
             <div class="tab-pane fade" id="migrations" role="tabpanel">
                 <?php
                 require_once __DIR__ . '/../includes/migrations.php';
@@ -945,6 +948,17 @@ ob_start();
                             $message = 'Failed to purge migration record';
                             $messageType = 'danger';
                         }
+                    }
+                } elseif ($action === 'purge_all' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $count = migrations_purge_all_successful();
+                    if ($count > 0) {
+                        $message = "Purged {$count} successful migration record(s)";
+                        // Reload to show updated status
+                        header('Location: /admin.php#migrations');
+                        exit;
+                    } else {
+                        $message = 'No successful migrations to purge';
+                        $messageType = 'info';
                     }
                 } elseif ($action === 'update_schema' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (schema_update_seed_file()) {
@@ -1037,8 +1051,21 @@ ob_start();
                 
                 <!-- Migrations Section -->
                 <div class="card mt-3">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h5>
+                        <?php
+                        $successfulCount = count(array_filter($migrations, function($m) {
+                            return $m['applied'] && $m['status'] === 'success';
+                        }));
+                        if ($successfulCount > 0):
+                        ?>
+                        <form method="POST" action="/admin.php#migrations" style="display: inline;" onsubmit="return confirm('This will remove all successful migration records from tracking (<?= $successfulCount ?> record(s)). This will NOT undo the migrations, only remove the tracking records. Continue?');">
+                            <input type="hidden" name="action" value="purge_all">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash-alt me-1"></i>Purge All Successful
+                            </button>
+                        </form>
+                        <?php endif; ?>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info">
@@ -1163,6 +1190,7 @@ ob_start();
                 <?php endif; ?>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
             
             <!-- Telematics Logs Tab -->
             <div class="tab-pane fade" id="logs" role="tabpanel">
