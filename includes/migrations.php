@@ -159,62 +159,52 @@ function migrations_apply(string $filename, ?int $userId = null): array
             }
             
             // Split SQL into individual statements
-            // Remove comments first to avoid splitting issues
-            $cleanSql = preg_replace('/--.*$/m', '', $sql);
-            $cleanSql = preg_replace('/\/\*.*?\*\//s', '', $cleanSql);
-            
-            // Split by semicolons, but be careful with nested parentheses
+            // Use a simpler approach: split by semicolon, then clean each statement
+            $lines = explode("\n", $sql);
             $statements = [];
             $current = '';
-            $depth = 0;
-            $inString = false;
-            $stringChar = '';
             
-            for ($i = 0; $i < strlen($cleanSql); $i++) {
-                $char = $cleanSql[$i];
-                $next = $i < strlen($cleanSql) - 1 ? $cleanSql[$i + 1] : '';
+            foreach ($lines as $line) {
+                // Remove inline comments (-- comments)
+                $line = preg_replace('/--.*$/', '', $line);
                 
-                // Handle string literals
-                if (($char === '"' || $char === "'") && ($i === 0 || $cleanSql[$i - 1] !== '\\')) {
-                    if (!$inString) {
-                        $inString = true;
-                        $stringChar = $char;
-                    } elseif ($char === $stringChar) {
-                        $inString = false;
-                        $stringChar = '';
-                    }
+                // Skip empty lines after comment removal
+                if (trim($line) === '') {
+                    continue;
                 }
                 
-                if (!$inString) {
-                    // Track parentheses depth
-                    if ($char === '(') {
-                        $depth++;
-                    } elseif ($char === ')') {
-                        $depth--;
-                    }
+                $current .= $line . "\n";
+                
+                // If line ends with semicolon, we have a complete statement
+                if (preg_match('/;\s*$/', trim($line))) {
+                    $stmt = trim($current);
+                    $current = '';
                     
-                    // Split on semicolon only when depth is 0
-                    if ($char === ';' && $depth === 0) {
-                        $stmt = trim($current);
-                        if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
+                    // Skip empty statements and SET FOREIGN_KEY_CHECKS (handled separately)
+                    if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
+                        // Remove any remaining block comments
+                        $stmt = preg_replace('/\/\*.*?\*\//s', '', $stmt);
+                        $stmt = trim($stmt);
+                        
+                        if (!empty($stmt)) {
                             $statements[] = $stmt;
                         }
-                        $current = '';
-                        continue;
                     }
                 }
-                
-                $current .= $char;
             }
             
-            // Add remaining statement if any
+            // Add any remaining statement
             $stmt = trim($current);
             if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
-                $statements[] = $stmt;
+                $stmt = preg_replace('/\/\*.*?\*\//s', '', $stmt);
+                $stmt = trim($stmt);
+                if (!empty($stmt)) {
+                    $statements[] = $stmt;
+                }
             }
             
             // Execute each statement, ignoring errors for duplicate indexes/columns
-            foreach ($statements as $statement) {
+            foreach ($statements as $index => $statement) {
                 if (empty(trim($statement))) {
                     continue;
                 }
@@ -238,8 +228,9 @@ function migrations_apply(string $filename, ?int $userId = null): array
                         // Index/column/table already exists or doesn't exist - that's okay
                         continue;
                     }
-                    // Re-throw other errors
-                    throw $e;
+                    // Re-throw with more context about which statement failed
+                    $stmtPreview = substr($statement, 0, 100);
+                    throw new Exception("Error executing statement #" . ($index + 1) . ": " . $errorMsg . " (Statement: " . $stmtPreview . "...)", 0, $e);
                 }
             }
             
