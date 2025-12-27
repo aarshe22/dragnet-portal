@@ -196,7 +196,18 @@
                             <span class="nav-icon-label d-lg-none"><?= htmlspecialchars($context['user_email'] ?? 'User') ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li class="px-3 py-2 d-lg-none"><strong><?= htmlspecialchars($context['user_email'] ?? 'User') ?></strong></li>
+                            <li class="px-3 py-2 d-lg-none">
+                                <strong><?= htmlspecialchars($context['user_email'] ?? 'User') ?></strong>
+                                <?php if (isset($context['user_role'])): ?>
+                                <span class="badge bg-primary ms-2"><?= htmlspecialchars($context['user_role']) ?></span>
+                                <?php endif; ?>
+                            </li>
+                            <li class="px-3 py-2 d-none d-lg-block">
+                                <strong><?= htmlspecialchars($context['user_email'] ?? 'User') ?></strong>
+                                <?php if (isset($context['user_role'])): ?>
+                                <span class="badge bg-primary ms-2"><?= htmlspecialchars($context['user_role']) ?></span>
+                                <?php endif; ?>
+                            </li>
                             <li class="px-3 py-2 d-lg-none"><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/profile.php"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
                             <li><a class="dropdown-item" href="/settings.php"><i class="fas fa-cog me-2"></i>Settings</a></li>
