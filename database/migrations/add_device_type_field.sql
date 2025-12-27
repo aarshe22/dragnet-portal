@@ -1,7 +1,0 @@
-SET FOREIGN_KEY_CHECKS = 0;
-
-ALTER TABLE `devices` 
-ADD COLUMN `device_type` VARCHAR(50) DEFAULT 'vehicle' AFTER `model`;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
