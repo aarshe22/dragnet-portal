@@ -171,14 +171,42 @@ tar -czf /backups/dragnet_files_$(date +%Y%m%d_%H%M%S).tar.gz /var/www/dragnet-p
    - Use development login or SSO
    - Access admin panel
    - Create additional tenants/users as needed
+   - Assign Developer role to primary admin user (for database management)
 
-2. **Register Devices:**
+2. **Configure Email:**
+   - Go to Admin → Email Integration
+   - Select email provider
+   - Enter credentials
+   - Test email sending
+
+3. **Configure Map Provider:**
+   - Go to Admin → Settings
+   - Select preferred map provider
+   - Set default zoom and center
+
+4. **Register Devices:**
    - Add devices via admin panel
    - Configure Teltonika devices to send data to `/api/teltonika/telemetry.php?imei=YOUR_IMEI`
 
-3. **Configure Alerts:**
+5. **Create Assets:**
+   - Add assets/vehicles
+   - Link devices to assets
+
+6. **Configure Alerts:**
    - Set up alert rules
+   - Configure user alert subscriptions
    - Configure push notifications (if using)
+   - Test alert generation
+
+7. **Set Up Geofences (optional):**
+   - Create geofences on map
+   - Associate with devices or groups
+   - Configure entry/exit alerts
+
+8. **Database Migrations (Developer role):**
+   - Review migration status in Admin → Database Migrations
+   - Apply any pending migrations
+   - Sync schema.sql with live database if needed
 
 ### Maintenance
 

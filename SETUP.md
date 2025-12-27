@@ -145,9 +145,32 @@ X-IMEI: YOUR_IMEI
 ## Security
 
 - **Tenant Isolation**: Every query explicitly scoped by tenant_id
-- **Role-Based Access**: Guest, ReadOnly, Operator, Administrator, TenantOwner
+- **Role-Based Access**: Guest, ReadOnly, Operator, Administrator, TenantOwner, Developer
 - **SSO Only**: No password storage
 - **Prepared Statements**: All SQL uses PDO prepared statements
+- **CSRF Protection**: Built-in CSRF protection utilities
+- **Rate Limiting**: Rate limiting functions available
+- **Session Security**: Secure session management with HTTP-only cookies
+
+## Features Overview
+
+### Core Features
+- **Real-Time Tracking**: Live GPS tracking with interactive maps
+- **Device Management**: Complete device lifecycle management
+- **Asset Management**: Link devices to assets/vehicles
+- **Trip Detection**: Automatic trip detection and route playback
+- **Geofencing**: Virtual boundaries with automatic entry/exit detection
+- **Alerts**: Real-time alerts with multiple notification channels
+- **Reports**: Comprehensive analytics and reporting
+- **PWA**: Installable web app with offline support
+
+### Advanced Features
+- **Device Groups**: Organize devices for bulk operations
+- **Alert Rules**: Configurable alert rules with thresholds
+- **User Alert Subscriptions**: Users can subscribe to specific alerts
+- **Email Integration**: Support for multiple email providers
+- **Database Migrations**: Server-side migration management (Developer role)
+- **Schema Comparison**: Compare live database with schema.sql (Developer role)
 
 ## Development
 

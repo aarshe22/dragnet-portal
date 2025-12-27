@@ -62,6 +62,23 @@ ob_start();
                     <a href="#maps" class="list-group-item list-group-item-action help-nav-item" data-section="maps">
                         <i class="fas fa-map me-2"></i>Map Settings
                     </a>
+                    <a href="#trips" class="list-group-item list-group-item-action help-nav-item" data-section="trips">
+                        <i class="fas fa-route me-2"></i>Trips & Route History
+                    </a>
+                    <a href="#device-groups" class="list-group-item list-group-item-action help-nav-item" data-section="device-groups">
+                        <i class="fas fa-layer-group me-2"></i>Device Groups
+                    </a>
+                    <a href="#alert-rules" class="list-group-item list-group-item-action help-nav-item" data-section="alert-rules">
+                        <i class="fas fa-sliders-h me-2"></i>Alert Rules
+                    </a>
+                    <a href="#pwa" class="list-group-item list-group-item-action help-nav-item" data-section="pwa">
+                        <i class="fas fa-mobile-alt me-2"></i>PWA Installation
+                    </a>
+                    <?php if (has_role('Developer')): ?>
+                    <a href="#migrations" class="list-group-item list-group-item-action help-nav-item" data-section="migrations">
+                        <i class="fas fa-database me-2"></i>Database Migrations
+                    </a>
+                    <?php endif; ?>
                     <a href="#troubleshooting" class="list-group-item list-group-item-action help-nav-item" data-section="troubleshooting">
                         <i class="fas fa-tools me-2"></i>Troubleshooting
                     </a>
@@ -318,14 +335,53 @@ ob_start();
                         <p>Set up intelligent alerts to be notified of important events in real-time.</p>
 
                         <h6 class="mt-4">Alert Types</h6>
+                        <p>The platform supports numerous alert types organized by category:</p>
+                        
+                        <h6 class="mt-3">Device Status</h6>
                         <ul>
-                            <li><strong>Device Offline:</strong> Device stops sending data</li>
-                            <li><strong>Ignition On/Off:</strong> Vehicle ignition status changes</li>
-                            <li><strong>Speed Violation:</strong> Vehicle exceeds speed limit</li>
-                            <li><strong>Idle Time:</strong> Vehicle idles for extended period</li>
-                            <li><strong>Low Voltage:</strong> Vehicle battery voltage drops</li>
+                            <li><strong>Device Offline:</strong> Device stops sending data (configurable threshold)</li>
+                            <li><strong>Device Online:</strong> Device comes back online after being offline</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Ignition</h6>
+                        <ul>
+                            <li><strong>Ignition On:</strong> Vehicle ignition is turned on</li>
+                            <li><strong>Ignition Off:</strong> Vehicle ignition is turned off</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Driving</h6>
+                        <ul>
+                            <li><strong>Speed Violation:</strong> Vehicle exceeds specified speed limit (configurable threshold)</li>
+                            <li><strong>Idle Time:</strong> Vehicle idles for extended period (configurable threshold)</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Vehicle Health</h6>
+                        <ul>
+                            <li><strong>Low Voltage:</strong> Vehicle battery voltage drops below threshold</li>
                             <li><strong>Low Battery:</strong> Device battery level is low</li>
-                            <li><strong>Geofence Entry/Exit:</strong> Vehicle enters or leaves a defined area</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Geofencing</h6>
+                        <ul>
+                            <li><strong>Geofence Entry:</strong> Vehicle enters a defined geofence area</li>
+                            <li><strong>Geofence Exit:</strong> Vehicle leaves a defined geofence area</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Vehicle Status</h6>
+                        <ul>
+                            <li><strong>Door Open:</strong> Vehicle door opened</li>
+                            <li><strong>Door Closed:</strong> Vehicle door closed</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Security</h6>
+                        <ul>
+                            <li><strong>Panic Button:</strong> Emergency panic button activated</li>
+                            <li><strong>Tow Detection:</strong> Vehicle being towed or lifted detected</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Safety</h6>
+                        <ul>
+                            <li><strong>Impact Detection:</strong> Vehicle impact or collision detected (configurable G-force threshold)</li>
                         </ul>
 
                         <h6 class="mt-4">Alert Severity Levels</h6>
@@ -338,10 +394,79 @@ ob_start();
                         <h6 class="mt-4">Managing Alerts</h6>
                         <ol>
                             <li>Navigate to <strong>Alerts</strong> from the main menu</li>
-                            <li>View all active alerts with filtering options</li>
+                            <li>View all active alerts with filtering options:
+                                <ul>
+                                    <li>Filter by alert type</li>
+                                    <li>Filter by severity (Info, Warning, Critical)</li>
+                                    <li>Filter by device or asset</li>
+                                    <li>Filter by acknowledgment status</li>
+                                    <li>Filter by date range</li>
+                                </ul>
+                            </li>
                             <li>Acknowledge alerts by clicking the acknowledge button</li>
                             <li>Assign alerts to team members for follow-up</li>
+                            <li>View alert details including metadata and timestamps</li>
                         </ol>
+                        
+                        <h6 class="mt-4">User Alert Subscriptions</h6>
+                        <p>Users can subscribe to receive notifications for specific alerts:</p>
+                        <ol>
+                            <li>Go to your <strong>Profile</strong> or <strong>Settings</strong> page</strong></li>
+                            <li>Navigate to <strong>Alert Subscriptions</strong> section</li>
+                            <li>Select alert types you want to receive</li>
+                            <li>Optionally filter by specific devices or assets</li>
+                            <li>Choose notification methods (push notifications, email)</li>
+                            <li>Save your subscriptions</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Rules -->
+            <div id="help-alert-rules" class="help-section" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-white">
+                        <h4 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Alert Rules</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>Configuring Alert Rules</h5>
+                        <p>Alert rules allow you to configure automated alert generation based on specific conditions and thresholds.</p>
+                        
+                        <h6 class="mt-4">Creating Alert Rules</h6>
+                        <ol>
+                            <li>Navigate to <strong>Admin</strong> → <strong>Alert Rules</strong> (Operator+ required)</li>
+                            <li>Click <strong>"Add Alert Rule"</strong></li>
+                            <li>Configure the rule:
+                                <ul>
+                                    <li><strong>Name:</strong> Descriptive name for the rule</li>
+                                    <li><strong>Description:</strong> Optional description</li>
+                                    <li><strong>Alert Type:</strong> Select the type of alert to generate</li>
+                                    <li><strong>Severity:</strong> Set alert severity (Info, Warning, Critical)</li>
+                                    <li><strong>Threshold:</strong> For applicable alert types, set threshold value and unit</li>
+                                    <li><strong>Conditions:</strong> Additional conditions (JSON format)</li>
+                                    <li><strong>Actions:</strong> Actions to take when alert is triggered</li>
+                                </ul>
+                            </li>
+                            <li>Associate with devices, device groups, or assets</li>
+                            <li>Configure notification recipients</li>
+                            <li>Enable or disable the rule</li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Alert Rule Features</h6>
+                        <ul>
+                            <li><strong>Threshold Configuration:</strong> Set thresholds for speed, idle time, voltage, etc.</li>
+                            <li><strong>Device Association:</strong> Apply rules to specific devices</li>
+                            <li><strong>Group Association:</strong> Apply rules to device groups for bulk configuration</li>
+                            <li><strong>Asset Association:</strong> Apply rules to assets (all devices linked to asset)</li>
+                            <li><strong>Enable/Disable:</strong> Temporarily disable rules without deleting</li>
+                            <li><strong>Notification Recipients:</strong> Configure who receives notifications</li>
+                        </ul>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tip:</strong> Use device groups to apply alert rules to multiple devices at once, making fleet-wide configuration easier.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -378,16 +503,319 @@ ob_start();
                             <li>Click <strong>"Save"</strong></li>
                         </ol>
 
+                        <h6 class="mt-4">Geofence Analytics</h6>
+                        <p>View detailed analytics for each geofence:</p>
+                        <ol>
+                            <li>Navigate to <strong>Geofences</strong> page</li>
+                            <li>Click the analytics icon (chart) on any geofence</li>
+                            <li>Or click <strong>"View Analytics"</strong> in the map popup</li>
+                            <li>View analytics including:
+                                <ul>
+                                    <li><strong>Visit Statistics:</strong> Number of entries/exits per device</li>
+                                    <li><strong>Dwell Time:</strong> Time devices spend inside geofence</li>
+                                    <li><strong>Currently Inside:</strong> Real-time list of devices currently inside</li>
+                                    <li><strong>Event History:</strong> Complete history of entry/exit events</li>
+                                </ul>
+                            </li>
+                            <li>Filter by date range for historical analysis</li>
+                        </ol>
+                        
                         <h6 class="mt-4">Geofence Best Practices</h6>
                         <ul>
                             <li>Use descriptive names for easy identification</li>
                             <li>Set appropriate buffer zones for accurate detection</li>
                             <li>Configure entry/exit delays to reduce false alerts</li>
                             <li>Link geofences to specific assets or device groups</li>
+                            <li>Use polygon geofences for irregular areas</li>
+                            <li>Review analytics regularly to optimize geofence placement</li>
                         </ul>
                     </div>
                 </div>
             </div>
+            
+            <!-- Trips & Route History -->
+            <div id="help-trips" class="help-section" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0"><i class="fas fa-route me-2"></i>Trips & Route History</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>Trip Detection and Management</h5>
+                        <p>The platform automatically detects trips based on ignition status and stores complete route information for playback and analysis.</p>
+                        
+                        <h6 class="mt-4">How Trip Detection Works</h6>
+                        <p>Trips are automatically detected when:</p>
+                        <ul>
+                            <li><strong>Trip Start:</strong> Ignition turns on (device starts moving)</li>
+                            <li><strong>Trip End:</strong> Ignition turns off (device stops moving)</li>
+                        </ul>
+                        <p>During a trip, the system stores waypoints (GPS coordinates) at regular intervals, creating a complete route history.</p>
+                        
+                        <h6 class="mt-4">Viewing Trips</h6>
+                        <ol>
+                            <li>Navigate to <strong>Trips</strong> from the main menu</li>
+                            <li>Filter trips by:
+                                <ul>
+                                    <li>Device</li>
+                                    <li>Asset</li>
+                                    <li>Date range</li>
+                                </ul>
+                            </li>
+                            <li>View trip list with:
+                                <ul>
+                                    <li>Start and end times</li>
+                                    <li>Distance traveled</li>
+                                    <li>Duration</li>
+                                    <li>Maximum speed</li>
+                                    <li>Average speed</li>
+                                </ul>
+                            </li>
+                            <li>Click on a trip to view details and route playback</li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Trip Statistics</h6>
+                        <p>Each trip includes comprehensive statistics:</p>
+                        <ul>
+                            <li><strong>Distance:</strong> Total distance traveled (in kilometers)</li>
+                            <li><strong>Duration:</strong> Total trip duration</li>
+                            <li><strong>Maximum Speed:</strong> Highest speed reached during trip</li>
+                            <li><strong>Average Speed:</strong> Average speed throughout trip</li>
+                            <li><strong>Idle Time:</strong> Time spent idle (speed < 5 km/h)</li>
+                            <li><strong>Start/End Locations:</strong> GPS coordinates of trip start and end</li>
+                        </ul>
+                        
+                        <h6 class="mt-4">Route Playback</h6>
+                        <p>View complete route history on the map:</p>
+                        <ul>
+                            <li>See the exact path taken during the trip</li>
+                            <li>View waypoints along the route</li>
+                            <li>Analyze speed and heading at each point</li>
+                            <li>Identify stops and idle periods</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Device Groups -->
+            <div id="help-device-groups" class="help-section" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="fas fa-layer-group me-2"></i>Device Groups</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>Organizing Devices into Groups</h5>
+                        <p>Device groups allow you to organize devices for bulk operations, making fleet management more efficient.</p>
+                        
+                        <h6 class="mt-4">Creating Device Groups</h6>
+                        <ol>
+                            <li>Navigate to <strong>Admin</strong> → <strong>Device Groups</strong> (Operator+ required)</li>
+                            <li>Click <strong>"Add Device Group"</strong></li>
+                            <li>Fill in group information:
+                                <ul>
+                                    <li><strong>Name:</strong> Descriptive name (e.g., "Delivery Fleet", "Service Vehicles")</li>
+                                    <li><strong>Description:</strong> Optional description</li>
+                                    <li><strong>Color:</strong> Color for visualization on maps and charts</li>
+                                    <li><strong>Active Status:</strong> Enable or disable the group</li>
+                                </ul>
+                            </li>
+                            <li>Add devices to the group (can be done after creation)</li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Managing Group Membership</h6>
+                        <p>Add or remove devices from groups:</p>
+                        <ul>
+                            <li>From the group detail page, add devices individually</li>
+                            <li>From the device detail page, add device to groups</li>
+                            <li>Devices can belong to multiple groups</li>
+                            <li>Group membership can be changed at any time</li>
+                        </ul>
+                        
+                        <h6 class="mt-4">Using Device Groups</h6>
+                        <p>Device groups are used for:</p>
+                        <ul>
+                            <li><strong>Bulk Alert Rules:</strong> Apply alert rules to all devices in a group</li>
+                            <li><strong>Geofence Associations:</strong> Associate geofences with device groups</li>
+                            <li><strong>Reporting:</strong> Generate reports for specific groups</li>
+                            <li><strong>Visualization:</strong> Color-code devices on maps and charts</li>
+                            <li><strong>Organization:</strong> Better organization of large fleets</li>
+                        </ul>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tip:</strong> Create groups based on vehicle type, department, or region to simplify fleet management.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PWA Installation -->
+            <div id="help-pwa" class="help-section" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>PWA Installation</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>Installing as a Progressive Web App</h5>
+                        <p>Dragnet Intelematics can be installed as a native-like app on your device, providing offline access, push notifications, and an app-like experience.</p>
+                        
+                        <h6 class="mt-4">Installation Methods</h6>
+                        
+                        <h6 class="mt-3">iOS (Safari)</h6>
+                        <ol>
+                            <li>Open the portal in Safari</li>
+                            <li>Tap the <strong>Share</strong> button (square with arrow)</li>
+                            <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                            <li>Tap <strong>"Add"</strong> to confirm</li>
+                            <li>The app icon will appear on your home screen</li>
+                        </ol>
+                        
+                        <h6 class="mt-3">Android (Chrome/Firefox)</h6>
+                        <ol>
+                            <li>Open the portal in Chrome or Firefox</li>
+                            <li>You may see an install prompt automatically</li>
+                            <li>Or tap the menu (three dots) → <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong></li>
+                            <li>Tap <strong>"Install"</strong> to confirm</li>
+                            <li>The app will be installed and appear in your app drawer</li>
+                        </ol>
+                        
+                        <h6 class="mt-3">Windows (Edge/Chrome)</h6>
+                        <ol>
+                            <li>Open the portal in Edge or Chrome</li>
+                            <li>Look for the install icon in the address bar</li>
+                            <li>Or go to menu → <strong>"Apps"</strong> → <strong>"Install this site as an app"</strong></li>
+                            <li>Click <strong>"Install"</strong> to confirm</li>
+                            <li>The app will be added to your Start menu</li>
+                        </ol>
+                        
+                        <h6 class="mt-3">macOS (Safari/Chrome)</h6>
+                        <ol>
+                            <li>Open the portal in Safari or Chrome</li>
+                            <li>In Safari: File → <strong>"Add to Dock"</strong></li>
+                            <li>In Chrome: Menu → <strong>"Install Dragnet Intelematics..."</strong></li>
+                            <li>The app will be added to your Dock or Applications folder</li>
+                        </ol>
+                        
+                        <h6 class="mt-4">PWA Features</h6>
+                        <p>Once installed, the PWA provides:</p>
+                        <ul>
+                            <li><strong>Offline Access:</strong> View cached pages and data when offline</li>
+                            <li><strong>Push Notifications:</strong> Receive real-time alerts and notifications</li>
+                            <li><strong>GPS Access:</strong> Request location permissions for enhanced features</li>
+                            <li><strong>App-like Experience:</strong> Standalone window without browser UI</li>
+                            <li><strong>Fast Loading:</strong> Cached resources load instantly</li>
+                            <li><strong>Home Screen Icon:</strong> Custom icon on your device</li>
+                        </ul>
+                        
+                        <h6 class="mt-4">Enabling Push Notifications</h6>
+                        <ol>
+                            <li>After installing the PWA, you may be prompted to enable notifications</li>
+                            <li>Or go to <strong>Settings</strong> → <strong>Notifications</strong></li>
+                            <li>Click <strong>"Enable Push Notifications"</strong></li>
+                            <li>Allow browser notifications when prompted</li>
+                            <li>You will now receive push notifications for alerts</li>
+                        </ol>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Push notifications require a secure connection (HTTPS) and may need to be enabled in your browser settings.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <?php if (has_role('Developer')): ?>
+            <!-- Database Migrations -->
+            <div id="help-migrations" class="help-section" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0"><i class="fas fa-database me-2"></i>Database Migrations</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>Managing Database Migrations</h5>
+                        <p>The migration system allows you to manage database schema changes in a controlled, versioned manner.</p>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Developer Only:</strong> Database migrations are only accessible to users with the Developer role.
+                        </div>
+                        
+                        <h6 class="mt-4">Accessing Migrations</h6>
+                        <ol>
+                            <li>Navigate to <strong>Admin</strong> → <strong>Database Migrations</strong> tab</li>
+                            <li>The system automatically scans for applied migrations on page load</li>
+                            <li>View migration status for all files in <code>database/migrations/</code></li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Migration Status</h6>
+                        <p>Each migration file shows one of the following statuses:</p>
+                        <ul>
+                            <li><strong>Applied (Success):</strong> Migration has been successfully applied</li>
+                            <li><strong>Pending:</strong> Migration file exists but hasn't been applied</li>
+                            <li><strong>Failed:</strong> Migration was attempted but failed (check error message)</li>
+                            <li><strong>Detected:</strong> Migration was auto-detected as applied (schema matches)</li>
+                        </ul>
+                        
+                        <h6 class="mt-4">Auto-Scanning</h6>
+                        <p>The system automatically detects applied migrations by:</p>
+                        <ul>
+                            <li>Checking if tables created by migrations exist</li>
+                            <li>Checking if columns added by migrations exist</li>
+                            <li>Checking if indexes created by migrations exist</li>
+                            <li>Comparing database schema with migration SQL</li>
+                        </ul>
+                        <p>This happens automatically when you access the Migrations tab.</p>
+                        
+                        <h6 class="mt-4">Applying Migrations</h6>
+                        <ol>
+                            <li>Find a migration with <strong>Pending</strong> status</li>
+                            <li>Click <strong>"Apply"</strong> button</li>
+                            <li>Review the confirmation message</li>
+                            <li>Click <strong>"Confirm"</strong> to apply</li>
+                            <li>The migration will execute and status will update</li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Viewing Migration SQL</h6>
+                        <p>To view the SQL content of any migration:</p>
+                        <ol>
+                            <li>Click the eye icon (👁️) next to the migration</li>
+                            <li>A modal will display the complete SQL content</li>
+                            <li>Review the SQL before applying if needed</li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Purging Migrations</h6>
+                        <p>Remove migration tracking records:</p>
+                        <ul>
+                            <li><strong>Purge Individual:</strong> Remove tracking for a single migration</li>
+                            <li><strong>Purge All Successful:</strong> Remove all successful migration records</li>
+                        </ul>
+                        <div class="alert alert-warning mt-2">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Warning:</strong> Purging does not undo the migration, it only removes the tracking record. The database changes remain.
+                        </div>
+                        
+                        <h6 class="mt-4">Schema Comparison</h6>
+                        <p>Compare the live database with the <code>database/schema.sql</code> seed file:</p>
+                        <ol>
+                            <li>View differences in the Schema Comparison section</li>
+                            <li>See missing or extra tables, columns, and indexes</li>
+                            <li>Click <strong>"Update Schema File"</strong> to sync <code>schema.sql</code> with live database</li>
+                            <li>A backup of the old schema.sql will be created automatically</li>
+                        </ol>
+                        
+                        <h6 class="mt-4">Best Practices</h6>
+                        <ul>
+                            <li>Always review migration SQL before applying</li>
+                            <li>Test migrations in a development environment first</li>
+                            <li>Keep migration files in chronological order</li>
+                            <li>Use descriptive filenames (e.g., <code>add_user_table.sql</code>)</li>
+                            <li>Keep <code>schema.sql</code> in sync with live database</li>
+                            <li>Back up database before applying migrations in production</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Reports -->
             <div id="help-reports" class="help-section" style="display: none;">
@@ -401,12 +829,20 @@ ob_start();
 
                         <h6 class="mt-4">Available Reports</h6>
                         <ul>
-                            <li><strong>Vehicle Activity:</strong> Daily/weekly/monthly usage summaries</li>
-                            <li><strong>Route History:</strong> Complete trip logs with maps</li>
-                            <li><strong>Speed Analysis:</strong> Speed violations and average speeds</li>
-                            <li><strong>Idle Time:</strong> Vehicle idle duration reports</li>
+                            <li><strong>Distance Report:</strong> Total distance traveled by asset/device over a date range</li>
+                            <li><strong>Idle Time Report:</strong> Vehicle idle duration analysis with detailed breakdown</li>
+                            <li><strong>Violations Report:</strong> Speed violations and other rule violations</li>
                             <li><strong>Fuel Consumption:</strong> Fuel usage estimates (if fuel sensor connected)</li>
-                            <li><strong>Maintenance Alerts:</strong> Service reminders based on mileage/hours</li>
+                            <li><strong>Activity Summary:</strong> Overall activity statistics including trips, distance, and time</li>
+                            <li><strong>Device Health:</strong> Device health metrics and diagnostics</li>
+                        </ul>
+                        
+                        <h6 class="mt-4">Report Filtering</h6>
+                        <p>All reports support filtering by:</p>
+                        <ul>
+                            <li><strong>Date Range:</strong> Select start and end dates</li>
+                            <li><strong>Asset:</strong> Filter by specific asset/vehicle</li>
+                            <li><strong>Device:</strong> Filter by specific device</li>
                         </ul>
 
                         <h6 class="mt-4">Exporting Reports</h6>
@@ -432,11 +868,12 @@ ob_start();
 
                         <h6 class="mt-4">User Roles</h6>
                         <ul>
-                            <li><strong>Guest:</strong> Read-only access, view-only permissions</li>
-                            <li><strong>ReadOnly:</strong> Can view all data but cannot make changes</li>
-                            <li><strong>Operator:</strong> Can manage devices, assets, and view reports</li>
-                            <li><strong>Administrator:</strong> Full access including user management and settings</li>
-                            <li><strong>TenantOwner:</strong> Complete control over tenant and all resources</li>
+                            <li><strong>Guest (Level 0):</strong> Read-only access, view-only permissions</li>
+                            <li><strong>ReadOnly (Level 1):</strong> Can view all data but cannot make changes</li>
+                            <li><strong>Operator (Level 2):</strong> Can manage devices, assets, alerts, and view reports</li>
+                            <li><strong>Administrator (Level 3):</strong> Full access including user management and settings</li>
+                            <li><strong>TenantOwner (Level 4):</strong> Complete control over tenant and all resources</li>
+                            <li><strong>Developer (Level 5):</strong> Top-level role with all capabilities including database migrations and schema management</li>
                         </ul>
 
                         <h6 class="mt-4">Adding Users</h6>
