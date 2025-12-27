@@ -105,7 +105,8 @@ function schema_get_expected(): array
             
             $schema[$tableName] = [
                 'columns' => $columns,
-                'definition' => $tableDef
+                'definition' => $tableDef,
+                'indexes' => [] // Initialize indexes array
             ];
         }
     }
@@ -166,6 +167,15 @@ function schema_compare(): array
     foreach ($expected as $tableName => $tableDef) {
         if (!isset($current[$tableName])) {
             continue; // Table doesn't exist, already reported
+        }
+        
+        // Ensure columns array exists
+        if (!isset($tableDef['columns']) || !is_array($tableDef['columns'])) {
+            continue; // No column definition in expected schema
+        }
+        
+        if (!isset($current[$tableName]['columns']) || !is_array($current[$tableName]['columns'])) {
+            continue; // No columns in current schema (shouldn't happen, but be safe)
         }
         
         $expectedColumns = array_column($tableDef['columns'], 'name');
