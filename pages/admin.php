@@ -1140,11 +1140,12 @@ ob_start();
                                                     <i class="fas fa-play"></i> Apply
                                                 </a>
                                             <?php endif; ?>
-                                            <a href="/admin.php?view=<?= urlencode($migration['filename']) ?>#migrations" 
-                                               class="btn btn-sm btn-outline-secondary"
-                                               title="View SQL">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    onclick="viewMigration('<?= h($migration['filename']) ?>')"
+                                                    title="View SQL">
                                                 <i class="fas fa-eye"></i>
-                                            </a>
+                                            </button>
                                         </td>
                                     </tr>
                                     <?php if ($migration['error_message']): ?>
@@ -1163,32 +1164,26 @@ ob_start();
                 </div>
                 
                 <!-- Migration View Modal -->
-                <?php if (isset($_GET['view'])): ?>
-                <?php
-                $viewFile = $_GET['view'];
-                if (preg_match('/\.sql$/', $viewFile) && !preg_match('/[\/\\\\]/', $viewFile)) {
-                    $content = migrations_get_content($viewFile);
-                }
-                ?>
-                <?php if (isset($content)): ?>
-                <div class="modal fade show" id="viewMigrationModal" tabindex="-1" style="display: block;">
+                <div class="modal fade" id="viewMigrationModal" tabindex="-1">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">Migration: <?= h($viewFile) ?></h5>
-                                <a href="/admin.php#migrations" class="btn-close"></a>
+                                <h5 class="modal-title">Migration: <span id="viewMigrationFilename"></span></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <pre class="bg-light p-3" style="max-height: 500px; overflow-y: auto;"><code><?= h($content) ?></code></pre>
+                                <div id="viewMigrationLoading" class="text-center py-5">
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                    <p class="mt-2">Loading migration content...</p>
+                                </div>
+                                <pre id="viewMigrationContent" class="bg-light p-3" style="max-height: 500px; overflow-y: auto; display: none;"><code></code></pre>
                             </div>
                             <div class="modal-footer">
-                                <a href="/admin.php#migrations" class="btn btn-secondary">Close</a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <?php endif; ?>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
             
@@ -2630,6 +2625,32 @@ ob_start();
             });
         };
         
+        
+        // View migration function
+        window.viewMigration = function(filename) {
+            const modalEl = document.getElementById('viewMigrationModal');
+            const modal = new bootstrap.Modal(modalEl);
+            const filenameSpan = document.getElementById('viewMigrationFilename');
+            const contentPre = document.getElementById('viewMigrationContent');
+            const loadingDiv = document.getElementById('viewMigrationLoading');
+            const codeElement = contentPre.querySelector('code');
+            
+            filenameSpan.textContent = filename;
+            loadingDiv.style.display = 'block';
+            contentPre.style.display = 'none';
+            loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading migration content...</p>';
+            
+            modal.show();
+            
+            // Load migration content
+            $.get('/api/admin/migrations.php?action=content&filename=' + encodeURIComponent(filename), function(data) {
+                codeElement.textContent = data.content;
+                loadingDiv.style.display = 'none';
+                contentPre.style.display = 'block';
+            }).fail(function(xhr) {
+                loadingDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading migration content: ' + escapeHtml(xhr.responseJSON?.error || 'Unknown error') + '</div>';
+            });
+        };
         
         // Test notifications function
         window.testNotifications = function() {

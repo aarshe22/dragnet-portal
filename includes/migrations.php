@@ -159,46 +159,46 @@ function migrations_apply(string $filename, ?int $userId = null): array
             }
             
             // Split SQL into individual statements
-            // Use a simpler approach: split by semicolon, then clean each statement
+            // Simple approach: split by semicolon followed by whitespace/newline
+            // Remove comments line by line to avoid issues
             $lines = explode("\n", $sql);
             $statements = [];
             $current = '';
             
             foreach ($lines as $line) {
-                // Remove inline comments (-- comments)
+                // Remove inline comments
                 $line = preg_replace('/--.*$/', '', $line);
+                $line = rtrim($line);
                 
-                // Skip empty lines after comment removal
-                if (trim($line) === '') {
+                // Skip completely empty lines
+                if ($line === '') {
                     continue;
                 }
                 
-                $current .= $line . "\n";
+                $current .= $line . ' ';
                 
-                // If line ends with semicolon, we have a complete statement
-                if (preg_match('/;\s*$/', trim($line))) {
+                // Check if line ends with semicolon (statement complete)
+                if (preg_match('/;\s*$/', $line)) {
                     $stmt = trim($current);
                     $current = '';
                     
-                    // Skip empty statements and SET FOREIGN_KEY_CHECKS (handled separately)
+                    // Remove any block comments
+                    $stmt = preg_replace('/\/\*.*?\*\//s', '', $stmt);
+                    $stmt = trim($stmt);
+                    
+                    // Skip empty statements and SET FOREIGN_KEY_CHECKS
                     if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
-                        // Remove any remaining block comments
-                        $stmt = preg_replace('/\/\*.*?\*\//s', '', $stmt);
-                        $stmt = trim($stmt);
-                        
-                        if (!empty($stmt)) {
-                            $statements[] = $stmt;
-                        }
+                        $statements[] = $stmt;
                     }
                 }
             }
             
-            // Add any remaining statement
+            // Handle any remaining statement
             $stmt = trim($current);
-            if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
+            if (!empty($stmt)) {
                 $stmt = preg_replace('/\/\*.*?\*\//s', '', $stmt);
                 $stmt = trim($stmt);
-                if (!empty($stmt)) {
+                if (!empty($stmt) && !preg_match('/^SET\s+FOREIGN_KEY_CHECKS/i', $stmt)) {
                     $statements[] = $stmt;
                 }
             }
