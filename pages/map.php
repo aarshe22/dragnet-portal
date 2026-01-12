@@ -477,8 +477,8 @@ ob_start();
                             message: '<strong>Oh snap!</strong> you can\'t draw that!'
                         },
                         shapeOptions: {
-                            color: '#d4af37',
-                            fillColor: '#d4af37',
+                            color: '#0066cc',
+                            fillColor: '#0066cc',
                             fillOpacity: 0.2,
                             weight: 3
                         }
@@ -552,8 +552,8 @@ ob_start();
                     allowIntersection: false,
                     showArea: true,
                     shapeOptions: {
-                        color: '#d4af37',
-                        fillColor: '#d4af37',
+                        color: '#0066cc',
+                        fillColor: '#0066cc',
                         fillOpacity: 0.2,
                         weight: 3
                     }
@@ -591,8 +591,8 @@ ob_start();
                     if (geofence.type === 'polygon') {
                         // Polygon: coordinates = [[lat, lon], [lat, lon], ...]
                         polygon = L.polygon(coordinates, {
-                            color: '#d4af37',
-                            fillColor: '#d4af37',
+                            color: '#0066cc',
+                            fillColor: '#0066cc',
                             fillOpacity: 0.2,
                             weight: 3
                         });
@@ -602,8 +602,8 @@ ob_start();
                         const radiusM = coordinates[2] * 1000; // Convert km to meters
                         polygon = L.circle(center, {
                             radius: radiusM,
-                            color: '#d4af37',
-                            fillColor: '#d4af37',
+                            color: '#0066cc',
+                            fillColor: '#0066cc',
                             fillOpacity: 0.2,
                             weight: 3
                         });
@@ -611,8 +611,8 @@ ob_start();
                         // Rectangle: coordinates = [[minLat, minLon], [maxLat, maxLon]]
                         const bounds = [coordinates[0], coordinates[1]];
                         polygon = L.rectangle(bounds, {
-                            color: '#d4af37',
-                            fillColor: '#d4af37',
+                            color: '#0066cc',
+                            fillColor: '#0066cc',
                             fillOpacity: 0.2,
                             weight: 3
                         });
@@ -770,28 +770,28 @@ ob_start();
 }
 
 .leaflet-draw-toolbar a {
-    background-color: var(--dragnet-dark);
-    color: var(--dragnet-badge-gold);
-    border: 1px solid var(--dragnet-badge-gold);
+    background-color: var(--enterprise-dark-grey);
+    color: var(--enterprise-blue);
+    border: 1px solid var(--enterprise-blue);
 }
 
 .leaflet-draw-toolbar a:hover {
-    background-color: var(--dragnet-badge-gold);
-    color: var(--dragnet-dark);
+    background-color: var(--enterprise-blue);
+    color: var(--enterprise-white);
 }
 
 .leaflet-draw-actions {
-    background-color: var(--dragnet-dark);
-    border: 1px solid var(--dragnet-badge-gold);
+    background-color: var(--enterprise-dark-grey);
+    border: 1px solid var(--enterprise-blue);
 }
 
 .leaflet-draw-actions a {
-    color: var(--dragnet-badge-gold);
+    color: var(--enterprise-blue);
 }
 
 .leaflet-draw-actions a:hover {
-    background-color: var(--dragnet-badge-gold);
-    color: var(--dragnet-dark);
+    background-color: var(--enterprise-blue);
+    color: var(--enterprise-white);
 }
 </style>
 

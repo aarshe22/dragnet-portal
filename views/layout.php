@@ -10,9 +10,8 @@
             color: inherit;
         }
         .intelematics-brand .intel-highlight {
-            color: #d4af37;
-            text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
-            font-weight: 700;
+            color: #0066cc;
+            font-weight: 600;
         }
     </style>
     
@@ -72,7 +71,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark dragnet-nav shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="/dashboard.php">
-                <i class="fas fa-shield-alt me-2"></i>Dragnet <span style="color: #d4af37; text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);">Intel</span>ematics
+                <i class="fas fa-shield-alt me-2"></i>Dragnet <span style="color: #0066cc;">Intel</span>ematics
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -244,9 +243,9 @@
     <div class="modal fade" id="pwaPromptModal" tabindex="-1" aria-labelledby="pwaPromptModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%); border-bottom: 2px solid var(--dragnet-badge-gold);">
-                    <h5 class="modal-title" id="pwaPromptModalLabel" style="font-family: var(--dragnet-typewriter); letter-spacing: 1px; text-transform: uppercase; color: var(--dragnet-white);">
-                        <i class="fas fa-bell me-2" style="color: var(--dragnet-badge-gold);"></i>Stay Connected
+                <div class="modal-header" style="background: var(--enterprise-dark-grey); border-bottom: 1px solid var(--enterprise-grey);">
+                    <h5 class="modal-title" id="pwaPromptModalLabel" style="font-family: var(--enterprise-font); color: var(--enterprise-white);">
+                        <i class="fas fa-bell me-2" style="color: var(--enterprise-blue);"></i>Stay Connected
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="dismissPwaPrompt"></button>
                 </div>
@@ -254,14 +253,14 @@
                     <div id="installPromptSection" style="display: none;">
                         <div class="d-flex align-items-start mb-4">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-mobile-alt fa-2x" style="color: var(--dragnet-badge-gold);"></i>
+                                <i class="fas fa-mobile-alt fa-2x" style="color: var(--enterprise-blue);"></i>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <h6 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary); margin-bottom: 0.5rem;">Install Dragnet Intelematics</h6>
-                                <p style="color: var(--dragnet-text-secondary); margin-bottom: 0;">Get quick access from your home screen. Works offline and loads faster.</p>
+                        <h6 style="font-family: var(--enterprise-font); font-weight: 600; color: var(--enterprise-text-primary); margin-bottom: 0.5rem;">Install Dragnet Intelematics</h6>
+                        <p style="color: var(--enterprise-text-secondary); margin-bottom: 0;">Get quick access from your home screen. Works offline and loads faster.</p>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-primary w-100 mb-3" id="installAppButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                        <button type="button" class="btn btn-primary w-100 mb-3" id="installAppButton">
                             <i class="fas fa-download me-2"></i>Install App
                         </button>
                     </div>
@@ -269,25 +268,25 @@
                     <div id="pushPromptSection" style="display: none;">
                         <div class="d-flex align-items-start mb-4">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-bell fa-2x" style="color: var(--dragnet-badge-gold);"></i>
+                                <i class="fas fa-bell fa-2x" style="color: var(--enterprise-blue);"></i>
                             </div>
                             <div class="flex-grow-1 ms-3">
-                                <h6 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary); margin-bottom: 0.5rem;">Enable Push Notifications</h6>
-                                <p style="color: var(--dragnet-text-secondary); margin-bottom: 0;">Get instant alerts for critical events, device status changes, and important updates.</p>
+                                <h6 style="font-family: var(--enterprise-font); font-weight: 600; color: var(--enterprise-text-primary); margin-bottom: 0.5rem;">Enable Push Notifications</h6>
+                                <p style="color: var(--enterprise-text-secondary); margin-bottom: 0;">Get instant alerts for critical events, device status changes, and important updates.</p>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-success w-100 mb-3" id="enablePushButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                        <button type="button" class="btn btn-success w-100 mb-3" id="enablePushButton">
                             <i class="fas fa-bell me-2"></i>Enable Notifications
                         </button>
                     </div>
                     
                     <div id="noPromptsMessage" style="display: none; text-align: center; padding: 1rem;">
                         <i class="fas fa-check-circle fa-2x mb-2" style="color: var(--dragnet-blue);"></i>
-                        <p style="color: var(--dragnet-text-secondary); margin: 0;">You're all set! All features are enabled.</p>
+                        <p style="color: var(--enterprise-text-secondary); margin: 0;">You're all set! All features are enabled.</p>
                     </div>
                 </div>
-                <div class="modal-footer" style="background: var(--dragnet-cream); border-top: 2px solid var(--dragnet-gray);">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="maybeLaterButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid var(--enterprise-lighter-grey);">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="maybeLaterButton">
                         Maybe Later
                     </button>
                 </div>
@@ -300,21 +299,21 @@
     <div class="modal fade" id="pwaInstallModal" tabindex="-1" aria-labelledby="pwaInstallModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(180deg, var(--dragnet-dark-gray) 0%, var(--dragnet-gray) 100%); border-bottom: 2px solid var(--dragnet-badge-gold);">
-                    <h5 class="modal-title" id="pwaInstallModalLabel" style="font-family: var(--dragnet-typewriter); letter-spacing: 1px; text-transform: uppercase; color: var(--dragnet-white);">
-                        <i class="fas fa-mobile-alt me-2" style="color: var(--dragnet-badge-gold);"></i>Install Dragnet Intelematics
+                <div class="modal-header" style="background: var(--enterprise-dark-grey); border-bottom: 1px solid var(--enterprise-grey);">
+                    <h5 class="modal-title" id="pwaInstallModalLabel" style="font-family: var(--enterprise-font); color: var(--enterprise-white);">
+                        <i class="fas fa-mobile-alt me-2" style="color: var(--enterprise-blue);"></i>Install Dragnet Intelematics
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="background: var(--dragnet-white); padding: 2rem;">
+                <div class="modal-body" style="background: var(--enterprise-white); padding: 2rem;">
                     <!-- Auto-install section (Chrome/Edge/Android) -->
                     <div id="autoInstallSection" style="display: none;">
                         <div class="text-center mb-4">
-                            <i class="fas fa-download fa-3x mb-3" style="color: var(--dragnet-badge-gold);"></i>
-                            <h5 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary);">Install Dragnet Intelematics</h5>
-                            <p style="color: var(--dragnet-text-secondary);">Get quick access from your home screen. Works offline and loads faster.</p>
+                            <i class="fas fa-download fa-3x mb-3" style="color: var(--enterprise-blue);"></i>
+                            <h5 style="font-family: var(--enterprise-font); font-weight: 600; color: var(--enterprise-text-primary);">Install Dragnet Intelematics</h5>
+                            <p style="color: var(--enterprise-text-secondary);">Get quick access from your home screen. Works offline and loads faster.</p>
                         </div>
-                        <button type="button" class="btn btn-primary w-100 mb-3" id="autoInstallButton" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px; padding: 1rem;">
+                        <button type="button" class="btn btn-primary w-100 mb-3" id="autoInstallButton" style="padding: 1rem;">
                             <i class="fas fa-download me-2"></i>Install Now
                         </button>
                     </div>
@@ -390,10 +389,10 @@
                     
                     <!-- Benefits section -->
                     <div class="mt-4 pt-4 border-top">
-                        <h6 style="font-family: var(--dragnet-typewriter); font-weight: 700; color: var(--dragnet-text-primary); margin-bottom: 1rem;">
-                            <i class="fas fa-star me-2" style="color: var(--dragnet-badge-gold);"></i>Benefits:
+                        <h6 style="font-family: var(--enterprise-font); font-weight: 600; color: var(--enterprise-text-primary); margin-bottom: 1rem;">
+                            <i class="fas fa-star me-2" style="color: var(--enterprise-blue);"></i>Benefits:
                         </h6>
-                        <ul style="color: var(--dragnet-text-secondary);">
+                        <ul style="color: var(--enterprise-text-secondary);">
                             <li>Quick access from your home screen</li>
                             <li>Works offline with cached data</li>
                             <li>Faster loading times</li>
@@ -403,8 +402,8 @@
                         </ul>
                     </div>
                 </div>
-                <div class="modal-footer" style="background: var(--dragnet-cream); border-top: 2px solid var(--dragnet-gray);">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="font-family: var(--dragnet-typewriter); text-transform: uppercase; letter-spacing: 1px;">
+                <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid var(--enterprise-lighter-grey);">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         Close
                     </button>
                 </div>
@@ -418,7 +417,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-md-6">
-                    <small class="text-muted">&copy; <?= date('Y') ?> Dragnet <span style="color: #d4af37;">Intel</span>ematics. All rights reserved.</small>
+                    <small class="text-muted">&copy; <?= date('Y') ?> Dragnet <span style="color: #0066cc;">Intel</span>ematics. All rights reserved.</small>
                 </div>
                 <div class="col-md-6 text-end">
                     <small class="text-muted">Version 1.0.0</small>
